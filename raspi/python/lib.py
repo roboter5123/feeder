@@ -1,6 +1,7 @@
 from gpiozero import Motor
 import json
 import time
+import os
 
 motor_forward_pin = 17
 motor_backward_pin = 18
@@ -9,28 +10,42 @@ motor = Motor(motor_forward_pin, motor_backward_pin)
 
 def get_settings(_ = None):
     
-    json_settings = open("raspi/python/settings.json")
-    settings = json_settings.read()
-    json_settings.close()
+    if os.path.exists("feeder/raspi/python/settings.json"):
+        
+        json_settings = open("feeder/raspi/python/settings.json", "r")
+        settings = json_settings.read()
+        json_settings.close()
     
-    return settings
+        return settings
+    
+    else:
+        
+        return ""
 
 def set_settings(settings):
     
     settings = json.loads(settings)
-    settings_file = open("raspi/python/settings.json","r")
-    settings_file_string = settings_file.read()
+    
+    if os.path.exists("feeder/raspi/python/settings.json"):
+        
+        settings_file = open("feeder/raspi/python/settings.json","r")
+        settings_file_string = settings_file.read()
+        settings_file.close()
+        
+    else:
+        
+        _ = open("feeder/raspi/python/settings.json","x")
+        _.close()
+        settings_file_string = ""
     
     if(settings_file_string == ""):
         
-        settings_file.close()
-        settings_file = open("raspi/python/settings.json","w")
-        settings_file.write(json.dumps(settings))
+        settings_file = open("feeder/raspi/python/settings.json","w")
+        json.dump(settings, settings_file)
         settings_file.close()
         return
-    
+
     json_settings = json.loads(settings_file_string)
-    settings_file.close()
     
     for setting in settings:
         
@@ -38,8 +53,8 @@ def set_settings(settings):
             
             json_settings[setting] = settings[setting]
             
-    settings_file = open("raspi/python/settings.json","w")
-    settings_file.write(json.dumps(json_settings))
+    settings_file = open("feeder/raspi/python/settings.json","w")
+    json.dump(json_settings, settings_file)
     settings_file.close()
         
     return
