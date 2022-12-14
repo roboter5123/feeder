@@ -8,8 +8,14 @@ class Testlib(unittest.TestCase):
 #===============================get settings========================================
     
     def test_get_settings(self):
-        file = open("feeder/raspi/python/settings.json","w+")
-        should = file.read()
+        
+        should ={"test":"eins", "test2": 2}
+        file = open("feeder/raspi/python/settings.json","w")
+        file.write(json.dumps(should))
+        file.close()
+        
+        file = open("feeder/raspi/python/settings.json","r")
+        should = json.load(file)
         file.close()
         currently = lib.get_settings()
         self.assertEqual(should,currently)
@@ -17,7 +23,7 @@ class Testlib(unittest.TestCase):
     def test_get_settings_file_not_exist(self):
         
         os.remove("feeder/raspi/python/settings.json")
-        should = ""
+        should = {}
         currently = lib.get_settings()
         self.assertEqual(should,currently)
         
@@ -27,15 +33,44 @@ class Testlib(unittest.TestCase):
         
         should ={"test":"eins", "test2": 2}
         file = open("feeder/raspi/python/settings.json","w")
-        file.write(json.dumps(should))
+        json.dump(should, file)
         file.close()
         
-        lib.set_settings(json.dumps(should))
+        lib.set_settings(should)
         
         file = open("feeder/raspi/python/settings.json","r")
         self.assertEqual(file.read(),json.dumps(should))
         file.close()
         
+    def test_set_settings_missing(self):
+        
+        should ={"test":"eins", "test2": 2}
+        
+        initial_settings = {"test2": 2}
+        file = open("feeder/raspi/python/settings.json","w")
+        json.dump(initial_settings, file)
+        file.close()
+        
+        lib.set_settings(should)
+        
+        file = open("feeder/raspi/python/settings.json","r")
+        self.assertEqual(file.read(),json.dumps(should))
+        file.close()
+        
+    def test_set_setting_different(self):
+        
+        should = {"test":"eins", "test2": 2}
+        
+        initial_settings = {"test":1, "test2": "zwei"}
+        file = open("feeder/raspi/python/settings.json","w")
+        json.dump(initial_settings, file)
+        file.close()
+        
+        lib.set_settings(should)
+        
+        file = open("feeder/raspi/python/settings.json","r")
+        self.assertEqual(file.read(),json.dumps(should))
+        file.close()
         
     def test_set_settings_empty_file(self):
         
@@ -44,7 +79,7 @@ class Testlib(unittest.TestCase):
         file.write("")
         file.close()
         
-        lib.set_settings(json.dumps(should))
+        lib.set_settings(should)
         
         file = open("feeder/raspi/python/settings.json","r")
         self.assertEqual(file.read(),json.dumps(should))
@@ -55,7 +90,7 @@ class Testlib(unittest.TestCase):
         should ={"test":"eins", "test2": 2}
         os.remove("feeder/raspi/python/settings.json")
         
-        lib.set_settings(json.dumps(should))
+        lib.set_settings(should)
         
         file = open("feeder/raspi/python/settings.json","r")
         self.assertEqual(file.read(),json.dumps(should))
