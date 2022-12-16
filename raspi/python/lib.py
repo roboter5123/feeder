@@ -11,13 +11,11 @@ motor_forward_pin = 18
 motor_backward_pin = 17
 motor = Motor(motor_forward_pin, motor_backward_pin)
 sched = [[],[],[],[],[],[],[]]
-settings = {sched}
-
+settings = {"schedule" : sched}
 
 def main():
     
     print("now in main")
-    add_new_task(Weekday.FRIDAY.value, "23:25",10)
     init()
     print("Done initializing")
     
@@ -113,6 +111,7 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
     global sched
     
     task = Task(time, dispense_seconds)
+    print(task.toJSON())
     weekday_tasks = sched[weekday]
     was_added = False
     
@@ -128,34 +127,86 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
         
         weekday_tasks.append(task)
         
-        
+    set_settings()
     put_new_task_on_schedule(weekday, task)
 
-def get_settings() -> dict:
+def get_settings():
     """
     This method gets the settings from feeder/raspi/python/settings.json 
-    and returns them as a dict.
     """
     global settings
     
     if os.path.exists("settings.json"):
         
         json_settings = open("settings.json", "r")
-        settings = json.load(json_settings)
+        
+        if (os.path.getsize("settings.json") <= 0):
+            
+            return
+        
+        settings = objectify_settings(json.load(json_settings))
         json_settings.close()   
     
     else:
         
-        json_settings = open("settings.json", "w")
-        json.dump(settings,json_settings)
+        json_settings = open("settings.json", "x")
         json_settings.close()
+
+def objectify_settings(settings_json):
+    
+    global settings
+    settings ={}
+    settings["schedule"] = objectify_schedule(settings_json.get("schedule"))
+    return settings
+
+def objectify_schedule(schedule_json):
+    
+    global sched
+    sched = []
+    
+    for day_json in json.loads(schedule_json):
+
+        day = []
         
-def set_settings(settings: dict) -> None:
+        for task in day_json:
+            
+            day.append(Task(task.get("time"), task.get("dispense_seconds")))
+            
+        sched.append(day)
+        
+    return sched
+    
+def stringify_settings():
+    
+    stringified_settings = {}
+    
+    stringified_settings["schedule"] = stringify_schedule()
+    
+    return stringified_settings
+    
+def stringify_schedule():
+    
+    stringified_schedule = []
+    
+    for day in sched:
+        
+        stringified_day = []
+        
+        for task in day:
+            
+            stringified_day.append(task.toJSON())
+            
+        stringified_schedule.append(stringified_day)
+        
+    return json.dumps(stringified_schedule)
+
+def set_settings():
     """
-    This method sets the settings in feeder/raspi/python/settings.json.
+    This method sets the settings in settings.json.
     If the file doesn't exist it creates it.
     If the file exists it parses the settings, replaces unmatching ones and adds in non existent ones.
     """
+    global settings
     
     if os.path.exists("settings.json"):
         
@@ -172,22 +223,14 @@ def set_settings(settings: dict) -> None:
     if(settings_file_string == ""):
         
         settings_file = open("settings.json","w")
-        json.dump(settings, settings_file)
+        json.dump(stringify_settings(), settings_file)
         settings_file.close()
         return
 
-    json_settings = settings
-    
-    for setting in json.loads(settings_file_string):
-        
-        if not json_settings.get(setting, False) or json_settings.get(setting, False) != settings.get(setting):
-            
-            json_settings[setting] = settings[setting]
-            
-    settings_file = open("feeder/raspi/python/settings.json","w")
-    json.dump(json_settings, settings_file)
-    settings_file.close()
-        
+    settings_json = json.loads(settings_file_string)
+    settings_json.update(stringify_settings())
+    settings_file = open("settings.json","w")
+    json.dump(settings_json, settings_file)
     return
 
 def dispense(dispense_seconds: int) -> None:
@@ -202,4 +245,3 @@ def dispense(dispense_seconds: int) -> None:
 def same_task(task1: Task, task2: Task) -> bool:
     
     return task1.time == task2.time
-
