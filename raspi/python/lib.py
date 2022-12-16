@@ -1,15 +1,15 @@
 from gpiozero import Motor
-import Weekday
+from Weekday import Weekday
 import json
 import time
 import schedule
-import Task
+from Task import Task
 import os
 
-motor_forward_pin = 17
-motor_backward_pin = 18
+motor_forward_pin = 18
+motor_backward_pin = 17
 motor = Motor(motor_forward_pin, motor_backward_pin)
-empty_schedule_dict = {Weekday.MONDAY:[],Weekday.TUESDAY:[],Weekday.WEDNESDAY:[],Weekday.THIRSDAY:[],Weekday.FRIDAY:[],Weekday.SATURDAY:[],Weekday.SUNDAY:[]}
+empty_schedule = [[],[],[],[],[],[],[]]
 settings = {}
 sched = {}
 
@@ -18,23 +18,28 @@ def init():
     This method initilizes the device by loading settings from th settings.json
     """
     
+    global settings
+    global sched
     settings = get_settings()
     
     if settings == {}:
         
-        settings.update("schedule", empty_schedule_dict)
+        settings["schedule"] = empty_schedule
         
     sched = settings.get("schedule")
 
-def add_new_task(weekday: Weekday, time : str, dispense_seconds: int):
+def add_new_task(weekday: int, time : str, dispense_seconds: int):
+    
+    global settings
+    global sched
     
     task = Task(time, dispense_seconds)
-    weekday_tasks = sched.get(weekday)
+    weekday_tasks = sched[weekday]
     was_added = False
     
     for saved_task in weekday_tasks:
         
-        if saved_task.same_task(task):
+        if same_task(saved_task, task):
             
             saved_task.dispense_seconds = task.dispense_seconds
             was_added = True
@@ -43,12 +48,17 @@ def add_new_task(weekday: Weekday, time : str, dispense_seconds: int):
     if not was_added:
         
         weekday_tasks.append(task)
+        
+    sched[weekday] = weekday_tasks
+    settings["schedule"] = sched
+    set_settings(settings)
 
 def get_settings() -> dict:
     """
     This method gets the settings from feeder/raspi/python/settings.json 
     and returns them as a dict.
     """
+    global settings
     
     if os.path.exists("feeder/raspi/python/settings.json"):
         
@@ -69,21 +79,21 @@ def set_settings(settings: dict) -> None:
     If the file exists it parses the settings, replaces unmatching ones and adds in non existent ones.
     """
     
-    if os.path.exists("feeder/raspi/python/settings.json"):
+    if os.path.exists("settings.json"):
         
-        settings_file = open("feeder/raspi/python/settings.json","r")
+        settings_file = open("settings.json","r")
         settings_file_string = settings_file.read()
         settings_file.close()
         
     else:
         
-        _ = open("feeder/raspi/python/settings.json","x")
+        _ = open("settings.json","x")
         _.close()
         settings_file_string = ""
     
     if(settings_file_string == ""):
         
-        settings_file = open("feeder/raspi/python/settings.json","w")
+        settings_file = open("settings.json","w")
         json.dump(settings, settings_file)
         settings_file.close()
         return
@@ -105,9 +115,15 @@ def set_settings(settings: dict) -> None:
 def dispense(dispense_seconds: int) -> None:
 
     motor.forward()
-    print(f"turning for {seconds} seconds")
-    time.sleep(seconds)
+    print(f"turning for {dispense_seconds} seconds")
+    time.sleep(dispense_seconds)
     motor.stop()
     print("Stopped turning")
     return 
 
+def same_task(task1: Task, task2: Task) -> bool:
+    
+    return task1.time == task2.time
+
+init()
+add_new_task(Weekday.MONDAY.value, "12:00",10)

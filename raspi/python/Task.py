@@ -7,10 +7,5 @@ class Task:
         
         self.time = t
         self.dispense_seconds = ds
-        
-    def same_task(self, compare_to):
-        
-        return compare_to.time == self.time
-        
 
         

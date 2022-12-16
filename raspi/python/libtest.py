@@ -1,5 +1,10 @@
 import unittest
+from gpiozero import Motor
+from Weekday import Weekday
 import json
+import time
+import schedule
+import Task
 import os
 import lib
 
@@ -87,16 +92,15 @@ class Testlib(unittest.TestCase):
         
     def test_set_settings_file_doesnt_exist(self):
             
-        should ={"test":"eins", "test2": 2}
+        should = {"test":"eins", "test2": 2}
         os.remove("feeder/raspi/python/settings.json")
         
         lib.set_settings(should)
         
         file = open("feeder/raspi/python/settings.json","r")
         self.assertEqual(file.read(),json.dumps(should))
-        file.close()
+        file.close()     
         
-#===============================add task============================================
 if __name__ == '__main__':
     
     unittest.main()
