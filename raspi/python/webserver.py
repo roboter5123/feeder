@@ -1,6 +1,6 @@
 from flask import Flask
 import lib
-
+import threading
 app = Flask(__name__)
 
 
@@ -17,4 +17,8 @@ def dispense_seconds(seconds):
     return 
 
 if __name__ == '__main__':
+    
+   mainThread = threading.Thread(target=lib.main, daemon=True)
+
+   mainThread.start()
    app.run()

@@ -2,32 +2,111 @@ from gpiozero import Motor
 from Weekday import Weekday
 import json
 import time
-import schedule
 from Task import Task
 import os
+import copy
+import schedule
 
 motor_forward_pin = 18
 motor_backward_pin = 17
 motor = Motor(motor_forward_pin, motor_backward_pin)
-empty_schedule = [[],[],[],[],[],[],[]]
-settings = {}
-sched = {}
+sched = [[],[],[],[],[],[],[]]
+settings = {sched}
 
+
+def main():
+    
+    print("now in main")
+    add_new_task(Weekday.FRIDAY.value, "23:25",10)
+    init()
+    print("Done initializing")
+    
+    while True:
+        
+        print("checking for tasks that need running")
+        schedule.run_pending()
+        print("Current task done")
+        time.sleep(60)
+    
 def init():
     """
     This method initilizes the device by loading settings from th settings.json
     """
-    
-    global settings
-    global sched
-    settings = get_settings()
-    
-    if settings == {}:
-        
-        settings["schedule"] = empty_schedule
-        
-    sched = settings.get("schedule")
+    get_settings()
+    init_schedule() 
+    pass
 
+def init_schedule():
+    
+    for task_index in range(len(sched[0])):
+        
+        task = sched[0][task_index]
+        schedule.every().monday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+        
+    for task_index in range(len(sched[1])):
+        
+        task = sched[1][task_index]
+        schedule.every().tuesday.at(task.time).do(dispense(dispense,dispense_seconds = task.dispense_seconds))
+        
+    for task_index in range(len(sched[2])):
+        
+        task = sched[2][task_index]
+        schedule.every().wednesday.at(task.time).do(dispense(dispense,dispense_seconds = task.dispense_seconds))
+        
+    for task_index in range(len(sched[3])):
+        
+        task = sched[3][task_index]
+        schedule.every().thursday.at(task.time).do(dispense(dispense,dispense_seconds = task.dispense_seconds))
+        
+    for task_index in range(len(sched[4])):
+        
+        task = sched[4][task_index]
+        schedule.every().friday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+        
+    for task_index in range(len(sched[5])):
+        
+        task = sched[5][task_index]
+        schedule.every().saturday.at(task.time).do(dispense(dispense,dispense_seconds = task.dispense_seconds))
+        
+    for task_index in range(len(sched[6])):
+        
+        task = sched[6][task_index]
+        schedule.every().sunday.at(task.time).do(dispense(dispense,dispense_seconds = task.dispense_seconds))
+    
+def put_new_task_on_schedule(weekday: int, task: Task):
+    
+    if (weekday == 0):
+        
+        schedule.every().monday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+    
+    elif(weekday == 1):
+        
+        schedule.every().tuesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+        
+    elif(weekday == 2):
+        
+        schedule.every().wednesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)         
+        
+    elif(weekday == 3):
+        
+        schedule.every().thursday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
+        
+    elif(weekday == 4):
+        
+        schedule.every().friday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
+        
+    elif(weekday == 5):
+        
+        schedule.every().saturday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
+        
+    elif(weekday == 6):
+        
+        schedule.every().sunday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
+        
+    elif(weekday == 7):
+        
+        schedule.every().day.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+         
 def add_new_task(weekday: int, time : str, dispense_seconds: int):
     
     global settings
@@ -49,9 +128,8 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
         
         weekday_tasks.append(task)
         
-    sched[weekday] = weekday_tasks
-    settings["schedule"] = sched
-    set_settings(settings)
+        
+    put_new_task_on_schedule(weekday, task)
 
 def get_settings() -> dict:
     """
@@ -60,18 +138,18 @@ def get_settings() -> dict:
     """
     global settings
     
-    if os.path.exists("feeder/raspi/python/settings.json"):
+    if os.path.exists("settings.json"):
         
-        json_settings = open("feeder/raspi/python/settings.json", "r")
+        json_settings = open("settings.json", "r")
         settings = json.load(json_settings)
-        json_settings.close()
-    
-        return settings
+        json_settings.close()   
     
     else:
         
-        return {}
-
+        json_settings = open("settings.json", "w")
+        json.dump(settings,json_settings)
+        json_settings.close()
+        
 def set_settings(settings: dict) -> None:
     """
     This method sets the settings in feeder/raspi/python/settings.json.
@@ -125,5 +203,3 @@ def same_task(task1: Task, task2: Task) -> bool:
     
     return task1.time == task2.time
 
-init()
-add_new_task(Weekday.MONDAY.value, "12:00",10)
