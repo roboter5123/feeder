@@ -7,6 +7,12 @@ import os
 import schedule
 import threading
 
+#Type aliases
+
+Json_task = dict[str, any]
+Json_day = list[Json_task]
+Json_sched = dict[int,Json_day]
+
 motor_forward_pin: int = 18
 motor_backward_pin: int = 17
 motor: Motor = Motor(motor_forward_pin, motor_backward_pin)
@@ -136,7 +142,7 @@ def load_settings() -> None:
         json_settings = open(settings_path, "x")
         json_settings.close()
 
-def objectify_settings(settings_json: dict[str,dict]) -> dict:
+def objectify_settings(settings_json: dict[str,any]) -> dict[str, any]:
     """
     Turns a settings json into a dictionary
     TODO: Make this not suck. Maybe even make this useless.
@@ -148,7 +154,7 @@ def objectify_settings(settings_json: dict[str,dict]) -> dict:
     settings["schedule"] = objectify_schedule(settings_json.get("schedule"))
     return settings
 
-def objectify_schedule(schedule_json: dict[int, list[dict[str,any]]]) -> dict[Weekday, list[Task]]: 
+def objectify_schedule(schedule_json: Json_sched) -> dict[Weekday, list[Task]]: 
     """
     Turns a schedule json into a dictionary
     TODO: Make this not suck. Maybe even make this useless.
@@ -168,7 +174,7 @@ def objectify_schedule(schedule_json: dict[int, list[dict[str,any]]]) -> dict[We
         
     return sched
     
-def dictify_settings() -> dict[str, dict[int, list[dict[str,any]]]]:
+def dictify_settings() -> dict[str, any]:
     """
     Turns settings dictionary into a JSON
     TODO: Make this not suck. Maybe even make this useless.
@@ -180,7 +186,7 @@ def dictify_settings() -> dict[str, dict[int, list[dict[str,any]]]]:
     
     return dictified_settings
     
-def dictify_schedule() -> dict[int, list[dict[str,any]]]:
+def dictify_schedule() -> Json_sched:
     """
     Turns schedule dictionary into a JSON compatible dict.
     TODO: Make this not suck. Maybe even make this useless.
@@ -230,7 +236,7 @@ def set_settings() -> None:
         settings_file.close()
         return
 
-    settings_json: dict[str, dict[int, list[dict[str,any]]]] = json.loads(settings_file_string)
+    settings_json: dict[str, any] = json.loads(settings_file_string)
     settings_json.update(dictify_settings())
     settings_file = open(settings_path,"w")
     json.dump(settings_json, settings_file)
