@@ -31,8 +31,12 @@ def dispense_seconds():
     return {"dispensed": True}
 
 if __name__ == '__main__':
+    """
+    Creates a second thread that runs the main loop of the machine.
+    Then runs the flask api server for incoming orders.
+    """
     
-   mainThread = threading.Thread(target=lib.main, daemon=True)
+    mainThread = threading.Thread(target=lib.main, daemon=True)
     
-   mainThread.start()
-   app.run()
+    mainThread.start()
+    app.run()

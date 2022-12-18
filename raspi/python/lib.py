@@ -16,6 +16,11 @@ settings_path = "raspi/python/settings.json"
 
 def main():
     
+    """
+    Main loop for the device.
+    Initiates the device and then checks once every minute for tasks that need doing.
+    """
+    
     print("now in main")
     init()
     print("Done initializing")
@@ -30,13 +35,19 @@ def main():
     
 def init():
     """
-    This method initilizes the device by loading settings from the settings.json
+    Initilizes the device by loading settings from the settings.json
+    and settign up the schedule.
     """
+    
     get_settings()
     init_schedule() 
-    pass
 
 def init_schedule():
+    """
+    Sets up the initial schedule with tasks from the settings.
+    TODO: Refactor in a way that the day in the schedule function can be easily exchanged. So that i don't need 7 loops.
+    https://github.com/dbader/schedule/issues/496 This issue might fix that.
+    """
     
     for task_index in range(len(sched[0])):
         
@@ -74,6 +85,11 @@ def init_schedule():
         schedule.every().sunday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
     
 def put_new_task_on_schedule(weekday: int, task: Task):
+    """
+    Puts a new task on the current schedule.
+    TODO: Refactor in a way that the day in the schedule function can be easily exchanged. So that i don't need 8 ifs.
+    https://github.com/dbader/schedule/issues/496 This issue might fix that.
+    """
     
     if (weekday == 0):
         
@@ -108,6 +124,10 @@ def put_new_task_on_schedule(weekday: int, task: Task):
         schedule.every().day.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
          
 def add_new_task(weekday: int, time : str, dispense_seconds: int):
+    """
+    Creates a new Task and adds it to the settings and current schdule
+    TODO: Refactor loop into it's own function for code prettiness.
+    """
     
     global settings
     global sched
@@ -116,7 +136,7 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
     print(task.toJSON())
     
     if weekday > 6:
-        print(sched)
+        
         for i in range(len(sched)):
             
             weekday_tasks = sched[i]
@@ -135,7 +155,6 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
         
                 weekday_tasks.append(task)
         
-        print(sched)
     else:
         weekday_tasks = sched[weekday]
         was_added = False
@@ -157,8 +176,9 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
 
 def get_settings():
     """
-    This method gets the settings from settings.json 
+    Gets the settings from settings.json and saves it into the global settings variable.
     """
+    
     global settings
     
     if os.path.exists(settings_path):
@@ -178,15 +198,25 @@ def get_settings():
         json_settings.close()
 
 def objectify_settings(settings_json):
+    """
+    Turns a settings json into a dictionary
+    TODO: Make this not suck. Maybe even make this useless.
+    """
     
     global settings
+    
     settings ={}
     settings["schedule"] = objectify_schedule(settings_json.get("schedule"))
     return settings
 
-def objectify_schedule(schedule_json):
+def objectify_schedule(schedule_json): 
+    """
+    Turns a schedule json into a dictionary
+    TODO: Make this not suck. Maybe even make this useless.
+    """
     
     global sched
+    
     sched = []
     
     for day_json in json.loads(schedule_json):
@@ -202,6 +232,10 @@ def objectify_schedule(schedule_json):
     return sched
     
 def stringify_settings():
+    """
+    Turns settings dictionary into a JSON
+    TODO: Make this not suck. Maybe even make this useless.
+    """
     
     stringified_settings = {}
     
@@ -210,6 +244,10 @@ def stringify_settings():
     return stringified_settings
     
 def stringify_schedule():
+    """
+    Turns schedule dictionary into a JSON.
+    TODO: Make this not suck. Maybe even make this useless.
+    """
     
     stringified_schedule = []
     
@@ -227,10 +265,11 @@ def stringify_schedule():
 
 def set_settings():
     """
-    This method sets the settings in settings.json.
+    Sets the settings in settings.json.
     If the file doesn't exist it creates it.
     If the file exists it parses the settings, replaces unmatching ones and adds in non existent ones.
     """
+    
     global settings
     
     if os.path.exists(settings_path):
@@ -259,6 +298,9 @@ def set_settings():
     return
 
 def dispense(dispense_seconds: int) -> None:
+    """
+    Turns the dispensing motor.
+    """
 
     motor.forward()
     print(f"turning for {dispense_seconds} seconds")
@@ -268,5 +310,8 @@ def dispense(dispense_seconds: int) -> None:
     return 
 
 def same_task(task1: Task, task2: Task) -> bool:
-    
+    """
+    Checks if two tasks are at the same time.
+    TODO: Make this a class Metod in tasks
+    """
     return task1.time == task2.time
