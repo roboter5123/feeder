@@ -9,7 +9,7 @@ class Task:
         self.time = t
         self.dispense_seconds = ds
             
-    def toJSON(self):
+    def to_dict(self):
         
         return self.__dict__
     

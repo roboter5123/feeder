@@ -10,7 +10,7 @@ import schedule
 motor_forward_pin = 18
 motor_backward_pin = 17
 motor = Motor(motor_forward_pin, motor_backward_pin)
-sched = [[],[],[],[],[],[],[]]
+sched = {Weekday.monday:[],Weekday.tuesday:[],Weekday.wednesday:[],Weekday.thursday:[],Weekday.friday:[],Weekday.saturday:[],Weekday.sunday:[]}
 settings = {"schedule" : sched}
 settings_path = "raspi/python/settings.json"
 
@@ -24,7 +24,7 @@ def main():
     print("now in main")
     init()
     print("Done initializing")
-    add_new_task(Weekday.FRIDAY.value,"23:25",10)
+    add_new_task(Weekday.friday,"23:25",10)
     
     while True:
         
@@ -49,42 +49,35 @@ def init_schedule():
     https://github.com/dbader/schedule/issues/496 This issue might fix that.
     """
     
-    for task_index in range(len(sched[0])):
+    for task in sched.get(Weekday.monday):
         
-        task = sched[0][task_index]
         schedule.every().monday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
         
-    for task_index in range(len(sched[1])):
+    for task in sched.get(Weekday.tuesday):
         
-        task = sched[1][task_index]
         schedule.every().tuesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
         
-    for task_index in range(len(sched[2])):
+    for task in sched.get(Weekday.wednesday):
         
-        task = sched[2][task_index]
         schedule.every().wednesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
         
-    for task_index in range(len(sched[3])):
+    for task in sched.get(Weekday.thursday):
         
-        task = sched[3][task_index]
         schedule.every().thursday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
         
-    for task_index in range(len(sched[4])):
+    for task in sched.get(Weekday.friday):
         
-        task = sched[4][task_index]
         schedule.every().friday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
         
-    for task_index in range(len(sched[5])):
+    for task in sched.get(Weekday.saturday):
         
-        task = sched[5][task_index]
         schedule.every().saturday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
         
-    for task_index in range(len(sched[6])):
+    for task in sched.get(Weekday.sunday):
         
-        task = sched[6][task_index]
         schedule.every().sunday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
     
-def put_new_task_on_schedule(weekday: int, task: Task):
+def put_new_task_on_schedule(weekday: Weekday, task: Task):
     """
     Puts a new task on the current schedule.
     TODO: Refactor in a way that the day in the schedule function can be easily exchanged. So that i don't need 8 ifs.
@@ -123,7 +116,7 @@ def put_new_task_on_schedule(weekday: int, task: Task):
         
         schedule.every().day.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
          
-def add_new_task(weekday: int, time : str, dispense_seconds: int):
+def add_new_task(weekday: Weekday, time : str, dispense_seconds: int):
     """
     Creates a new Task and adds it to the settings and current schdule
     TODO: Refactor loop into it's own function for code prettiness.
@@ -133,17 +126,14 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
     global sched
     
     task = Task(time, dispense_seconds)
-    print(task.toJSON())
     
-    if weekday > 6:
+    if weekday == weekday.everyday:
         
-        for i in range(len(sched)):
+        for day in sched:
             
-            weekday_tasks = sched[i]
             was_added = False
-            print(weekday_tasks)
     
-            for saved_task in weekday_tasks:
+            for saved_task in day:
         
                 if same_task(saved_task, task):
             
@@ -153,13 +143,14 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
     
             if not was_added:
         
-                weekday_tasks.append(task)
+                day.append(task)
         
     else:
-        weekday_tasks = sched[weekday]
+        
+        day = sched.get(weekday)
         was_added = False
     
-        for saved_task in weekday_tasks:
+        for saved_task in day:
         
             if same_task(saved_task, task):
             
@@ -169,7 +160,7 @@ def add_new_task(weekday: int, time : str, dispense_seconds: int):
     
         if not was_added:
         
-            weekday_tasks.append(task)
+            day.append(task)
         
     set_settings()
     put_new_task_on_schedule(weekday, task)
@@ -217,51 +208,53 @@ def objectify_schedule(schedule_json):
     
     global sched
     
-    sched = []
-    
-    for day_json in json.loads(schedule_json):
+    for day in schedule_json:
 
-        day = []
+        dict_day = []
         
-        for task in day_json:
+        for task in schedule_json.get(day):
             
-            day.append(Task(task.get("time"), task.get("dispense_seconds")))
+            dict_day.append(Task(task.get("time"), task.get("dispense_seconds")))
             
-        sched.append(day)
+        sched.update({Weekday(int(day)):dict_day}) 
         
     return sched
     
-def stringify_settings():
+def dictify_settings() -> dict:
     """
     Turns settings dictionary into a JSON
     TODO: Make this not suck. Maybe even make this useless.
     """
     
-    stringified_settings = {}
+    dictified_settings = {}
     
-    stringified_settings["schedule"] = stringify_schedule()
+    dictified_settings["schedule"] = dictify_schedule()
     
-    return stringified_settings
+    return dictified_settings
     
-def stringify_schedule():
+def dictify_schedule() -> dict:
     """
-    Turns schedule dictionary into a JSON.
+    Turns schedule dictionary into a JSON compatible dict.
     TODO: Make this not suck. Maybe even make this useless.
     """
     
-    stringified_schedule = []
+    global sched
     
-    for day in sched:
+    dictified_schedule = {}
+    
+    for day, tasks in sched.items():
         
-        stringified_day = []
+        dictified_day = []
         
-        for task in day:
+        for task in tasks:
             
-            stringified_day.append(task.toJSON())
+            dictified_day.append(task.to_dict())
             
-        stringified_schedule.append(stringified_day)
+        dictified_schedule[day.value] = dictified_day
         
-    return json.dumps(stringified_schedule)
+    print(dictified_schedule)
+        
+    return dictified_schedule
 
 def set_settings():
     """
@@ -287,12 +280,12 @@ def set_settings():
     if(settings_file_string == ""):
         
         settings_file = open(settings_path,"w")
-        json.dump(stringify_settings(), settings_file)
+        json.dump(dictify_settings(), settings_file)
         settings_file.close()
         return
 
     settings_json = json.loads(settings_file_string)
-    settings_json.update(stringify_settings())
+    settings_json.update(dictify_settings())
     settings_file = open(settings_path,"w")
     json.dump(settings_json, settings_file)
     return

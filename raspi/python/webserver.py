@@ -13,7 +13,7 @@ def get_settings():
 @app.route('/settings')
 def send_settings():
     
-    return lib.stringify_settings()
+    return lib.dictify_settings()
 
 @app.route('/add-task')
 def add_task():
