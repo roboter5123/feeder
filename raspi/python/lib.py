@@ -15,7 +15,6 @@ settings = {"schedule" : sched}
 settings_path = "raspi/python/settings.json"
 
 def main():
-    
     """
     Main loop for the device.
     Initiates the device and then checks once every minute for tasks that need doing.
@@ -46,8 +45,6 @@ def init():
 def init_schedule():
     """
     Sets up the initial schedule with tasks from the settings.
-    TODO: Refactor in a way that the day in the schedule function can be easily exchanged. So that i don't need 7 loops.
-    https://github.com/dbader/schedule/issues/496 This issue might fix that.
     """
     
     #This goes through all days and executes schedule.every().""insert day"".at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
@@ -60,47 +57,12 @@ def init_schedule():
             getattr(schedule.every(), day.name).at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
     print(schedule.get_jobs())
     
-def put_new_task_on_schedule(weekday: Weekday, task: Task):
+def put_new_task_on_schedule(day: Weekday, task: Task):
     """
     Puts a new task on the current schedule.
-    TODO: Refactor in a way that the day in the schedule function can be easily exchanged. So that i don't need 8 ifs.
-    https://github.com/dbader/schedule/issues/496 This issue might fix that.
     """
-    
-    
-    
-    
-    if (weekday == 0):
-        
-        schedule.every().monday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-    
-    elif(weekday == 1):
-        
-        schedule.every().tuesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-        
-    elif(weekday == 2):
-        
-        schedule.every().wednesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)         
-        
-    elif(weekday == 3):
-        
-        schedule.every().thursday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
-        
-    elif(weekday == 4):
-        
-        schedule.every().friday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
-        
-    elif(weekday == 5):
-        
-        schedule.every().saturday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
-        
-    elif(weekday == 6):
-        
-        schedule.every().sunday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)  
-        
-    elif(weekday == 7):
-        
-        schedule.every().day.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+
+    getattr(schedule.every(), day.name).at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
          
 def add_new_task(weekday: Weekday, time : str, dispense_seconds: int):
     """
