@@ -1,8 +1,6 @@
 from flask import Flask, request, render_template
 import lib
 import threading
-from Weekday import Weekday
-from Task import Task
 app = Flask(__name__, template_folder='templates', static_folder='staticFiles')
 
 @app.route('/')
@@ -21,7 +19,7 @@ def add_task():
     weekday = int(request.args.get("day"))
     time = request.args.get("time")
     dispense_seconds = int(request.args.get("amount"))
-    lib.add_new_task(weekday, time, dispense_seconds)
+    lib.add_new_task_to_sched(weekday, time, dispense_seconds)
     return "Done"
 
 @app.route("/dispense")
