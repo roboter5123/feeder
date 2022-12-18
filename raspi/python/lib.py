@@ -25,6 +25,7 @@ def main():
     init()
     print("Done initializing")
     add_new_task(Weekday.friday,"23:25",10)
+    add_new_task(Weekday.tuesday,"12:10",20)
     
     while True:
         
@@ -49,33 +50,15 @@ def init_schedule():
     https://github.com/dbader/schedule/issues/496 This issue might fix that.
     """
     
-    for task in sched.get(Weekday.monday):
+    #This goes through all days and executes schedule.every().""insert day"".at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+    print(schedule.get_jobs())
+    
+    for day in sched:
         
-        schedule.every().monday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+        for task in sched.get(day):
         
-    for task in sched.get(Weekday.tuesday):
-        
-        schedule.every().tuesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-        
-    for task in sched.get(Weekday.wednesday):
-        
-        schedule.every().wednesday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-        
-    for task in sched.get(Weekday.thursday):
-        
-        schedule.every().thursday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-        
-    for task in sched.get(Weekday.friday):
-        
-        schedule.every().friday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-        
-    for task in sched.get(Weekday.saturday):
-        
-        schedule.every().saturday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-        
-    for task in sched.get(Weekday.sunday):
-        
-        schedule.every().sunday.at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+            getattr(schedule.every(), day.name).at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+    print(schedule.get_jobs())
     
 def put_new_task_on_schedule(weekday: Weekday, task: Task):
     """
@@ -83,6 +66,9 @@ def put_new_task_on_schedule(weekday: Weekday, task: Task):
     TODO: Refactor in a way that the day in the schedule function can be easily exchanged. So that i don't need 8 ifs.
     https://github.com/dbader/schedule/issues/496 This issue might fix that.
     """
+    
+    
+    
     
     if (weekday == 0):
         
