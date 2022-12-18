@@ -1,16 +1,18 @@
 from flask import Flask, request, render_template
 import lib
 import threading
+from Weekday import Weekday
 app = Flask(__name__, template_folder='templates', static_folder='staticFiles')
 
 @app.route('/')
-def get_settings():
+def get_index() -> any:
     
     return render_template("index.html")
 
 @app.route('/settings')
-def send_settings():
+def send_settings() -> dict[str, any]:
     
+    lib.log(f"Sending settings back to {request.remote_addr}")
     return lib.dictify_settings()
 
 @app.route('/add-task')
@@ -19,7 +21,7 @@ def add_task():
     weekday = int(request.args.get("day"))
     time = request.args.get("time")
     dispense_seconds = int(request.args.get("amount"))
-    lib.add_new_task_to_sched(weekday, time, dispense_seconds)
+    lib.add_new_task_to_sched(Weekday(weekday), time, dispense_seconds)
     return "Done"
 
 @app.route("/dispense")
@@ -35,6 +37,5 @@ if __name__ == '__main__':
     """
     
     mainThread = threading.Thread(target=lib.main, daemon=True)
-    
     mainThread.start()
     app.run()

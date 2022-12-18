@@ -6,6 +6,7 @@ from Task import Task
 import os
 import schedule
 import threading
+import datetime
 
 #Type aliases
 
@@ -13,18 +14,23 @@ Json_task = dict[str, any]
 Json_day = list[Json_task]
 Json_sched = dict[int,Json_day]
 
+#Global variables
 motor_forward_pin: int = 18
 motor_backward_pin: int = 17
 motor: Motor = Motor(motor_forward_pin, motor_backward_pin)
 sched: dict[Weekday, list[Task]] = {Weekday.monday:[],Weekday.tuesday:[],Weekday.wednesday:[],Weekday.thursday:[],Weekday.friday:[],Weekday.saturday:[],Weekday.sunday:[]}
 settings: dict[str,any] = {"schedule" : sched}
+current_time :datetime= datetime.datetime.now()
 settings_path: str = "raspi/python/settings.json"
+logs_path: str = "raspi/python/logs/log-"
 
 def main() -> None:
     """
     Main loop for the device.
     Initiates the device and then checks once every minute for tasks that need doing.
     """
+    
+    global logs_path
     
     init()
     add_new_task_to_sched(Weekday.friday,"23:25",10)
@@ -35,24 +41,24 @@ def main() -> None:
         task_thread = threading.Thread(target=execute_current_tasks, daemon=True)
         task_thread.start()
         time.sleep(60)
-    
-def execute_current_tasks():
-    
-    print("checking for tasks that need running")
-    schedule.run_pending()
-    print("Current task done")
-    
+      
 def init() -> None:
     """
     Initilizes the device by loading settings from the settings.json
     and settign up the schedule.
     """
     
-    print("Initializing")
+    global current_time
+    global logs_path
+    
+    logs_path += f"{current_time.year}-{current_time.month}-{current_time.day}-{current_time.hour}-{current_time.minute}-{current_time.second}.txt"
+    logs_file = open(logs_path, "x")
+    logs_file.close()
+    log("Initializing")
     load_settings()
     init_schedule() 
-    print("Done initializing")
-
+    log("Done initializing")
+    
 def init_schedule() -> None:
     """
     Sets up the initial schedule with tasks from the settings.
@@ -60,24 +66,23 @@ def init_schedule() -> None:
     
     global sched
     
+    log("Initialising schedule")
+    
     #This goes through all days and executes schedule.every().""insert day"".at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
     for day in sched:
         
         for task in sched.get(day):
         
             getattr(schedule.every(), day.name).at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+            
+    log("Done initialising schedule")
     
-def put_new_task_on_schedule(day: Weekday, task: Task) -> None:
-    """
-    Puts a new task on the current schedule.
-    """
+def execute_current_tasks():
+    
+    log("Checking for tasks to be done")
+    schedule.run_pending()
+    log("Current Tasks done")
 
-    #Equivilant to schedule.every()."insert day"..at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
-    dispense_seconds: int = task.dispense_seconds
-    time: str = task.time
-    day_name: str = day.name
-    getattr(schedule.every(), day_name).at(time).do(dispense,dispense_seconds)
-         
 def add_new_task_to_sched(weekday: Weekday, time : str, dispense_seconds: int) -> None:
     """
     Creates a new Task and adds it to the settings and current schdule
@@ -87,30 +92,44 @@ def add_new_task_to_sched(weekday: Weekday, time : str, dispense_seconds: int) -
     global settings
     global sched
     
+    log("Adding task")
+    log("Adding task to schedule variable")
+    
     task: Task = Task(time, dispense_seconds)
     
-    if weekday == weekday.everyday:
+    if weekday == Weekday.everyday:
         
         for day in sched:
             
             add_new_task_to_day(task, sched.get(day))
-        
+            put_new_task_on_schedule(day, task)
+    
     else:
         
         day = sched.get(weekday)
         add_new_task_to_day(task, day)
+        log("Done adding task to schedule variable")
+        put_new_task_on_schedule(weekday, task)
         
-    set_settings()
-    put_new_task_on_schedule(weekday, task)
-
+    save_settings()
+    log("Done adding task")
+     
 def add_new_task_to_day(task: Task, day: list[Task]) -> None:
     
     was_added: bool = False
+    
+    log("Adding task to day list")
     
     for saved_task in day:
         
         if saved_task.same_task(task):
             
+            if(task.dispense_seconds <= 0):
+                
+                day.remove(saved_task)
+                was_added = True
+                break
+                
             saved_task.dispense_seconds = task.dispense_seconds
             was_added = True
             break
@@ -119,6 +138,21 @@ def add_new_task_to_day(task: Task, day: list[Task]) -> None:
         
         day.append(task)
 
+def put_new_task_on_schedule(day: Weekday, task: Task) -> None:
+    """
+    Puts a new task on the current schedule.
+    """
+
+    log(f"Putting a new task on the schedule for {day.name}, {task.time} with {task.dispense_seconds} = {task.dispense_seconds}")
+    
+    #Equivilant to schedule.every()."insert day"..at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
+    dispense_seconds: int = task.dispense_seconds
+    time: str = task.time
+    day_name: str = day.name
+    getattr(schedule.every(), day_name).at(time).do(dispense,dispense_seconds)
+    
+    log("Done adding task to schedule")
+    
 def load_settings() -> None:
     """
     Loads the settings from settings.json and saves it into the global settings variable.
@@ -126,12 +160,15 @@ def load_settings() -> None:
     
     global settings
     
+    log("Loading settings")
+    
     if os.path.exists(settings_path):
         
         json_settings = open(settings_path, "r")
         
         if (os.path.getsize(settings_path) <= 0):
             
+            log("settings.json doesn't exist")
             return
         
         settings = objectify_settings(json.load(json_settings))
@@ -141,6 +178,8 @@ def load_settings() -> None:
         
         json_settings = open(settings_path, "x")
         json_settings.close()
+        
+    log("Settings loaded")
 
 def objectify_settings(settings_json: dict[str,any]) -> dict[str, any]:
     """
@@ -150,8 +189,10 @@ def objectify_settings(settings_json: dict[str,any]) -> dict[str, any]:
     
     global settings
     
+    log("Objectifieing settings")
     settings ={}
     settings["schedule"] = objectify_schedule(settings_json.get("schedule"))
+    log(f"Objectified settings: {settings}")
     return settings
 
 def objectify_schedule(schedule_json: Json_sched) -> dict[Weekday, list[Task]]: 
@@ -161,6 +202,8 @@ def objectify_schedule(schedule_json: Json_sched) -> dict[Weekday, list[Task]]:
     """
     
     global sched
+    
+    log("Objectifieing schedule")
     
     for day in schedule_json:
 
@@ -172,7 +215,51 @@ def objectify_schedule(schedule_json: Json_sched) -> dict[Weekday, list[Task]]:
             
         sched.update({Weekday(int(day)):dict_day}) 
         
+    log(f"Objectified schedule: {sched}")
+        
     return sched
+    
+def save_settings() -> None:
+    """
+    Sets the settings in settings.json.
+    If the file doesn't exist it creates it.
+    If the file exists it parses the settings, replaces unmatching ones and adds in non existent ones.
+    """
+    
+    global settings
+    
+    log("Saving settings")
+    
+    if os.path.exists(settings_path):
+        
+        log("Settings.json found")
+        settings_file = open(settings_path,"r")
+        settings_file_string: str = settings_file.read()
+        settings_file.close()
+        
+    else:
+        
+        log("Settings.json not found. Creating it.")
+        _ = open(settings_path,"x")
+        _.close()
+        settings_file_string: str = ""
+    
+    if(settings_file_string == ""):
+        
+        log("Dumping settings to empty settings.json")
+        settings_file = open(settings_path,"w")
+        json.dump(dictify_settings(), settings_file, indent = 4)
+        settings_file.close()
+        log("Done dumping settings to empty settings.json")
+        return
+
+    log("Updating settings from settings.json")
+    settings_json: dict[str, any] = json.loads(settings_file_string)
+    settings_json.update(dictify_settings())
+    log("Dumping updated settings to settings.json")
+    settings_file = open(settings_path,"w")
+    json.dump(settings_json, settings_file, indent = 2)
+    log("Done Dumping updated settings to settings.json")
     
 def dictify_settings() -> dict[str, any]:
     """
@@ -180,9 +267,12 @@ def dictify_settings() -> dict[str, any]:
     TODO: Make this not suck. Maybe even make this useless.
     """
     
-    dictified_settings: dict[str, dict[int, list[dict[str,any]]]] = {}
+    log("Dictifieing settings")
     
+    dictified_settings: dict[str, dict[int, list[dict[str,any]]]] = {}
     dictified_settings["schedule"] = dictify_schedule()
+    
+    log(f"Dictified settings {dictified_settings}")
     
     return dictified_settings
     
@@ -193,6 +283,8 @@ def dictify_schedule() -> Json_sched:
     """
     
     global sched
+    
+    log("Dictifieing schedule")
     
     dictified_schedule: dict[int, list[dict[str,any]]] = {}
     
@@ -206,48 +298,25 @@ def dictify_schedule() -> Json_sched:
             
         dictified_schedule[day.value] = dictified_day
         
+    log(f"Dictified schedule: {dictified_schedule}")
+        
     return dictified_schedule
-
-def set_settings() -> None:
-    """
-    Sets the settings in settings.json.
-    If the file doesn't exist it creates it.
-    If the file exists it parses the settings, replaces unmatching ones and adds in non existent ones.
-    """
-    
-    global settings
-    
-    if os.path.exists(settings_path):
-        
-        settings_file = open(settings_path,"r")
-        settings_file_string: str = settings_file.read()
-        settings_file.close()
-        
-    else:
-        
-        _ = open(settings_path,"x")
-        _.close()
-        settings_file_string: str = ""
-    
-    if(settings_file_string == ""):
-        
-        settings_file = open(settings_path,"w")
-        json.dump(dictify_settings(), settings_file)
-        settings_file.close()
-        return
-
-    settings_json: dict[str, any] = json.loads(settings_file_string)
-    settings_json.update(dictify_settings())
-    settings_file = open(settings_path,"w")
-    json.dump(settings_json, settings_file)
-
+ 
 def dispense(dispense_seconds: int) -> None:
     """
     Turns the dispensing motor.
     """
-
+    log(f"Dispensing for {dispense_seconds} seconds")
     motor.forward()
-    print(f"turning for {dispense_seconds} seconds")
     time.sleep(dispense_seconds)
     motor.stop()
-    print("Stopped turning")
+    log(f"Done dispensing for {dispense_seconds} seconds")
+    
+def log(log_message: str):
+    
+    global logs_path
+    
+    time = f"{current_time.day}-{current_time.month}-{current_time.hour}-{current_time.minute}-{current_time.second}:"
+    log_file = open(logs_path, "a")
+    log_file.write(f"{time} {log_message}\n")
+    log_file.close()
