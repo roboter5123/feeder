@@ -29,12 +29,8 @@ def main() -> None:
     Main loop for the device.
     Initiates the device and then checks once every minute for tasks that need doing.
     """
-    
-    global logs_path
-    
+
     init()
-    add_new_task_to_sched(Weekday.friday,"23:25",10)
-    add_new_task_to_sched(Weekday.tuesday,"12:10",20)
     
     while True:
         
