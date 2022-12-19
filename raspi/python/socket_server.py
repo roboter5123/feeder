@@ -7,6 +7,7 @@ import time
 login_url:str = "192.168.0.2"
 server: socket
 server_functions = {}
+port = 8058
 
 def start_sockets():
     
@@ -34,15 +35,12 @@ def start_outgoing_socket():
             
                 lib.log(e)
                 continue
-            
-            port = 8058
         
             try:
                 print("connecting")
                 server.connect((login_url, port))
                 print("connected")
 
-            
             except Exception as e:
             
                 lib.log(e)

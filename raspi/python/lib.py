@@ -91,19 +91,17 @@ def add_new_task_to_sched(weekday: Weekday, time : str, dispense_seconds: int) -
     log("Adding task")
     log("Adding task to schedule variable")
     
-    task: Task = Task(time, dispense_seconds)
-    
     if weekday == Weekday.everyday:
         
         for day in sched:
-            
+            task = Task(time, dispense_seconds)
             response = add_new_task_to_day(task, sched.get(day), response)
             put_new_task_on_schedule(day, task)
     
     else:
         
         day = sched.get(weekday)
-        response = add_new_task_to_day(task, day, response)
+        response = add_new_task_to_day(Task(time, dispense_seconds), day, response)
         log("Done adding task to schedule variable")
 
     save_settings()
@@ -323,5 +321,3 @@ def log(log_message: str):
     log_file = open(logs_path, "a")
     log_file.write(f"{time} {log_message}\n")
     log_file.close()
-    
-
