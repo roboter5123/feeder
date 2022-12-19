@@ -2,6 +2,7 @@ from flask import Flask, request, render_template
 import lib
 import threading
 from Weekday import Weekday
+import socket_server as socks
 app = Flask(__name__, template_folder='templates', static_folder='staticFiles')
 
 
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     
     main_thread = threading.Thread(target=lib.main, daemon=True)
     main_thread.start()
-    socket_thread = threading.Thread(target=lib.start_sockets)
+    socket_thread = threading.Thread(target=socks.start_sockets)
     socket_thread.start()
     
     app.run()
