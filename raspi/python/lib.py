@@ -392,7 +392,7 @@ def listen_for_instructions():
         
         try:
             
-            response = str(server_functions.get(command)(args))
+            response = server_functions.get(command)(args)
             response += "\n"
 
         except Exception as e:
@@ -414,21 +414,23 @@ def set_settings(args: list) -> bool:
     save_settings()
     load_settings()
     print(settings)
-    return True
+    return str(True)
 
 def get_settings(args: list) -> dict:
     
-    print("getting")
-    pass
+    return json.dumps(dictify_settings())
 
 def add_task_from_connection(args: list) -> bool:
     
-    print("Adding")
-    pass
+    day = Weekday(int(args[0]))
+    time = args[1]
+    dispense_seconds = int(args[2])
+    add_new_task_to_sched(day,time,dispense_seconds)
+    return str(True)
 
 def dispense_from_connection(args: list) -> bool:
     
-    print("Dispensing")
-    pass
+    dispense(int(args[0]))
+    return str(True)
         
 
