@@ -11,20 +11,39 @@ def get_index() -> any:
     
     return render_template("index.html")
 
-@app.route('/settings')
+@app.route('/settings', methods = ["POST", "GET"])
 def http_send_settings() -> dict[str, any]:
     
-    lib.log(f"Sending settings back to {request.remote_addr}")
-    return lib.dictify_settings()
+    if request.method == "GET":
+        
+        lib.log(f"Sending settings back to {request.remote_addr}")
+        return lib.dictify_settings()
+    
+    elif request.method == "POST":
+        
+        lib.log(f"Setting settings to {request.json}")
+        settings = request.json
+        lib.save_settings()
+        lib.load_settings()
+        return lib.dictify_settings()
 
-@app.route('/add-task')
+@app.route('/add-task', methods = ["POST", "GET"])
 def http_add_task():
     
-    weekday = int(request.args.get("day"))
-    time = request.args.get("time")
-    dispense_seconds = int(request.args.get("amount"))
-    
-    return lib.add_new_task_to_sched(Weekday(weekday), time, dispense_seconds)
+    if request.method == "GET":
+        
+        weekday = int(request.args.get("day"))
+        time = request.args.get("time")
+        dispense_seconds = int(request.args.get("amount"))
+        return lib.add_new_task_to_sched(Weekday(weekday), time, dispense_seconds)
+
+    elif request.method == "POST":
+        
+        requestjson = request.json
+        weekday = requestjson.get("day")
+        time = requestjson.get("time")
+        dispense_seconds = int(requestjson.get("amount"))
+        return lib.add_new_task_to_sched(Weekday(weekday), time, dispense_seconds)
 
 @app.route("/dispense")
 def http_dispense_seconds():
