@@ -29,8 +29,6 @@ def main() -> None:
     Initiates the device and then checks once every minute for tasks that need doing.
     """
     
-    init()
-    
     while True:
         
         task_thread = threading.Thread(target=execute_current_tasks, daemon=True)

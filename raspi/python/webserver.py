@@ -38,6 +38,7 @@ if __name__ == '__main__':
     Then runs the flask api server for incoming orders.
     """
     
+    lib.init()
     main_thread = threading.Thread(target=lib.main, daemon=True)
     main_thread.start()
     socket_thread = threading.Thread(target=socks.start_sockets)
