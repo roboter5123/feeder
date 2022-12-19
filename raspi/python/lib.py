@@ -88,7 +88,7 @@ def add_new_task_to_sched(weekday: Weekday, time : str, dispense_seconds: int) -
         
         raise ValueError("Time must be a string of format hh:mm")
     
-    if dispense_seconds < 0 or not type(dispense_seconds, int):
+    if dispense_seconds < 0 or not type(dispense_seconds) == int:
         
         raise ValueError("dispense_seconds must be a positive int or 0")
     
@@ -317,7 +317,7 @@ def dispense(dispense_seconds: int) -> None:
     Turns the dispensing motor.
     """
     
-    if dispense_seconds < 0 or not type(dispense_seconds, int):
+    if dispense_seconds < 0 or not type(dispense_seconds) == int:
         
         raise ValueError("dispense_seconds must be a positive int or 0")
     

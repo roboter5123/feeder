@@ -125,4 +125,3 @@ def dispense_from_connection(args: list) -> bool:
     """
     lib.dispense(int(args[0]))
     return str(True)
-        
