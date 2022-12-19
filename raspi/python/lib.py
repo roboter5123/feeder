@@ -7,6 +7,7 @@ import os
 import schedule
 import threading
 import datetime
+import re
 
 #Type aliases
 Json_task = dict[str, any]
@@ -19,7 +20,7 @@ motor_backward_pin: int = 17
 motor: Motor = Motor(motor_forward_pin, motor_backward_pin)
 sched: dict[Weekday, list[Task]] = {Weekday.monday:[],Weekday.tuesday:[],Weekday.wednesday:[],Weekday.thursday:[],Weekday.friday:[],Weekday.saturday:[],Weekday.sunday:[]}
 settings: dict[str,any] = {"schedule" : sched}
-current_time :datetime= datetime.datetime.now()
+current_time :datetime = datetime.datetime.now()
 settings_path: str = "raspi/python/settings.json"
 logs_path: str = "raspi/python/logs/log-"
 
@@ -82,6 +83,14 @@ def add_new_task_to_sched(weekday: Weekday, time : str, dispense_seconds: int) -
     Creates a new Task and adds it to the settings and current schdule
     TODO: Refactor loop into it's own function for code prettiness.
     """
+    
+    if not re.search("[0-2][0-4]:[0-5][0-9]",time):
+        
+        raise ValueError("Time must be a string of format hh:mm")
+    
+    if dispense_seconds < 0 or not type(dispense_seconds, int):
+        
+        raise ValueError("dispense_seconds must be a positive int or 0")
     
     response = {"response" :"Invalid Input"}
     
@@ -176,8 +185,8 @@ def load_settings() -> None:
         json_settings.close()
     
     else:
-        
-        json_settings = open(settings_path, "x")
+    
+        json_settings = open(settings_path, "w")
         json_settings.close()
         
     log("Settings loaded")
@@ -307,6 +316,11 @@ def dispense(dispense_seconds: int) -> None:
     """
     Turns the dispensing motor.
     """
+    
+    if dispense_seconds < 0 or not type(dispense_seconds, int):
+        
+        raise ValueError("dispense_seconds must be a positive int or 0")
+    
     log(f"Dispensing for {dispense_seconds} seconds")
     motor.forward()
     time.sleep(dispense_seconds)

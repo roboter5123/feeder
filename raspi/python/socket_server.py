@@ -13,42 +13,35 @@ def start_sockets():
     
     global server_functions
     
-    server_functions = {"get" : get_settings, "set" : set_settings, "dispense" : dispense_from_connection, "add": add_task_from_connection}
-    start_outgoing_socket()
-    listen_for_instructions()
+    while True:
+        
+        server_functions = {"get" : get_settings, "set" : set_settings, "dispense" : dispense_from_connection, "add": add_task_from_connection}
+
+        try:
+            
+            start_outgoing_socket()
+            listen_for_instructions()
+
+        except Exception as e:
+            
+            print(e)
+            lib.log(e)
+            time.sleep(60)
+            print("Retrying connection")
+            lib.log("Retrying connection")
+            continue
         
 def start_outgoing_socket():
     
         global server
-        
-        print("connecting to server")
     
-        while True:
-            
-            time.sleep(5)
-            
-            try:
-            
-                server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            
-            except Exception as e:
-            
-                lib.log(e)
-                continue
-        
-            try:
-                print("connecting")
-                server.connect((login_url, port))
-                print("connected")
-
-            except Exception as e:
-            
-                lib.log(e)
-                continue
-        
-            print("Successfully connected")
-            lib.log("Successfully connected to login server")
-            return
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("connecting")
+        server.connect((login_url, port))
+        print("connected")
+        print("Successfully connected")
+        lib.log("Successfully connected to login server")
+        return
                 
 def listen_for_instructions():
     
