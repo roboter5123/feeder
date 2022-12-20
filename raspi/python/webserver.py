@@ -22,7 +22,10 @@ def http_send_settings() -> dict[str, any]:
     elif request.method == "POST":
         
         lib.log(f"Setting settings to {request.json}")
-        settings = request.json
+        print(lib.settings)
+        print
+        lib.settings.update(lib.objectify_settings(request.json))
+        print(lib.settings)
         lib.save_settings()
         lib.load_settings()
         return lib.dictify_settings()
@@ -64,5 +67,3 @@ if __name__ == '__main__':
     socket_thread.start()
     
     app.run()
-
-    

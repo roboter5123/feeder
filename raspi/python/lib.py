@@ -8,6 +8,7 @@ import schedule
 import threading
 import datetime
 import re
+from uuid6 import uuid7
 
 #Type aliases
 Json_task = dict[str, any]
@@ -50,8 +51,14 @@ def init() -> None:
     logs_file.close()
     log("Initializing")
     load_settings()
-    save_settings()
     init_schedule() 
+    
+    if settings.get("uuid") == None or settings.get("uuid") == "None":
+        
+        settings["uuid"] = uuid7()
+        print(settings["uuid"])
+    
+    save_settings()
     log("Done initializing")
     
 def init_schedule() -> None:
@@ -200,7 +207,7 @@ def objectify_settings(settings_json: dict[str,any]) -> dict[str, any]:
     global settings
     
     log("Objectifieing settings")
-    settings ={}
+    settings.update(settings_json)
     settings["schedule"] = objectify_schedule(settings_json.get("schedule"))
     log(f"Objectified settings: {settings}")
     return settings
@@ -214,20 +221,22 @@ def objectify_schedule(schedule_json: Json_sched) -> dict[Weekday, list[Task]]:
     global sched
     
     log("Objectifieing schedule")
-    
-    for day in schedule_json:
+    try:
+        for day in schedule_json:
 
-        dict_day = []
+            dict_day = []
         
-        for task in schedule_json.get(day):
+            for task in schedule_json.get(day):
             
-            dict_day.append(Task(task.get("time"), task.get("dispense_seconds")))
+                dict_day.append(Task(task.get("time"), int(task.get("dispense_seconds"))))
             
-        sched.update({Weekday(int(day)):dict_day}) 
+            sched.update({Weekday(int(day)):dict_day}) 
         
-    log(f"Objectified schedule: {sched}")
+        log(f"Objectified schedule: {sched}")
         
-    return sched
+    finally:
+        
+        return sched
     
 def save_settings() -> None:
     """
@@ -280,8 +289,10 @@ def dictify_settings() -> dict[str, any]:
     log("Dictifieing settings")
     
     dictified_settings: dict[str, dict[int, list[dict[str,any]]]] = {}
+    dictified_settings.update(settings)
     dictified_settings["schedule"] = dictify_schedule()
-    
+    uuid = settings.get("uuid")
+    dictified_settings.update({"uuid": str(uuid)})
     log(f"Dictified settings {dictified_settings}")
     
     return dictified_settings

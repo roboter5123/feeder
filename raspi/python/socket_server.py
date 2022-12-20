@@ -29,7 +29,6 @@ def start_sockets():
             
             print(e)
             lib.log(e)
-            time.sleep(60)
             print("Retrying connection")
             lib.log("Retrying connection")
             continue
@@ -47,6 +46,11 @@ def start_outgoing_socket():
     print("connected")
     print("Successfully connected")
     lib.log("Successfully connected to login server")
+    print("Sending UUID")
+    lib.log("Sending UUID")
+    uuid = str(lib.dictify_settings().get("uuid")) + "\n"
+    print(uuid)
+    server.sendall(uuid.encode())
     return
                 
 def listen_for_instructions():
@@ -87,19 +91,22 @@ def set_settings(args: list) -> bool:
     global sched
     
     new_settings = json.loads(args[0])
+    
     print(new_settings)
     new_settings = lib.objectify_settings(new_settings)
-    settings = new_settings
-    sched = settings.get("schedule")
     lib.save_settings()
     lib.load_settings()
-    print(settings)
+    lib.schedule.clear()
+    lib.init_schedule()
+    print(lib.settings)
     return str(True)
 
 def get_settings(args: list) -> dict:
     """
-    Gets the current settigs and returns them to be sent back to the server.
+    Gets the current settings and returns them to be sent back to the server.
+    Should tunr this into a general get attribute thing
     """
+     
     return json.dumps(lib.dictify_settings())
 
 def add_task_from_connection(args: list) -> bool:
