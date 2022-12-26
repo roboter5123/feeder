@@ -1,4 +1,3 @@
-package test;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.HashMap;
@@ -43,14 +42,6 @@ public class SocketConnector {
         Connection connection =  connections.get(uuid);
         connection.sendCommand(message);
         return connection.receiveResponse();
-    }
-
-    public void stop() throws IOException {
-
-        running = false;
-        server.close();
-
-
     }
 }
 
