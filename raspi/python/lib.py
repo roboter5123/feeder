@@ -7,9 +7,9 @@ import os
 import schedule
 import threading
 import datetime
+import re
 
 #Type aliases
-
 Json_task = dict[str, any]
 Json_day = list[Json_task]
 Json_sched = dict[int,Json_day]
@@ -20,7 +20,7 @@ motor_backward_pin: int = 17
 motor: Motor = Motor(motor_forward_pin, motor_backward_pin)
 sched: dict[Weekday, list[Task]] = {Weekday.monday:[],Weekday.tuesday:[],Weekday.wednesday:[],Weekday.thursday:[],Weekday.friday:[],Weekday.saturday:[],Weekday.sunday:[]}
 settings: dict[str,any] = {"schedule" : sched}
-current_time :datetime= datetime.datetime.now()
+current_time :datetime = datetime.datetime.now()
 settings_path: str = "raspi/python/settings.json"
 logs_path: str = "raspi/python/logs/log-"
 
@@ -29,12 +29,6 @@ def main() -> None:
     Main loop for the device.
     Initiates the device and then checks once every minute for tasks that need doing.
     """
-    
-    global logs_path
-    
-    init()
-    add_new_task_to_sched(Weekday.friday,"23:25",10)
-    add_new_task_to_sched(Weekday.tuesday,"12:10",20)
     
     while True:
         
@@ -56,6 +50,7 @@ def init() -> None:
     logs_file.close()
     log("Initializing")
     load_settings()
+    save_settings()
     init_schedule() 
     log("Done initializing")
     
@@ -89,32 +84,42 @@ def add_new_task_to_sched(weekday: Weekday, time : str, dispense_seconds: int) -
     TODO: Refactor loop into it's own function for code prettiness.
     """
     
+    if not re.search("[0-2][0-4]:[0-5][0-9]",time):
+        
+        raise ValueError("Time must be a string of format hh:mm")
+    
+    if dispense_seconds < 0 or not type(dispense_seconds, int):
+        
+        raise ValueError("dispense_seconds must be a positive int or 0")
+    
+    response = {"response" :"Invalid Input"}
+    
     global settings
     global sched
     
     log("Adding task")
     log("Adding task to schedule variable")
     
-    task: Task = Task(time, dispense_seconds)
-    
     if weekday == Weekday.everyday:
         
         for day in sched:
-            
-            add_new_task_to_day(task, sched.get(day))
+            task = Task(time, dispense_seconds)
+            response = add_new_task_to_day(task, sched.get(day), response)
             put_new_task_on_schedule(day, task)
     
     else:
         
         day = sched.get(weekday)
-        add_new_task_to_day(task, day)
+        response = add_new_task_to_day(Task(time, dispense_seconds), day, response)
         log("Done adding task to schedule variable")
-        put_new_task_on_schedule(weekday, task)
-        
+
     save_settings()
+    schedule.clear()
+    init_schedule()
     log("Done adding task")
+    return json.dumps(response)
      
-def add_new_task_to_day(task: Task, day: list[Task]) -> None:
+def add_new_task_to_day(task: Task, day: list[Task], response: str) -> str:
     
     was_added: bool = False
     
@@ -128,15 +133,20 @@ def add_new_task_to_day(task: Task, day: list[Task]) -> None:
                 
                 day.remove(saved_task)
                 was_added = True
+                response.update({"response" :"Removed Task"})
                 break
                 
             saved_task.dispense_seconds = task.dispense_seconds
             was_added = True
+            response.update({"response" :"Updated Task"})
             break
     
-    if not was_added:
+    if not was_added and task.dispense_seconds >0:
         
         day.append(task)
+        response.update({"response" :"Added Task"})
+        
+    return response
 
 def put_new_task_on_schedule(day: Weekday, task: Task) -> None:
     """
@@ -149,7 +159,7 @@ def put_new_task_on_schedule(day: Weekday, task: Task) -> None:
     dispense_seconds: int = task.dispense_seconds
     time: str = task.time
     day_name: str = day.name
-    getattr(schedule.every(), day_name).at(time).do(dispense,dispense_seconds)
+    getattr(schedule.every(), day.name).at(task.time).do(dispense,dispense_seconds = task.dispense_seconds)
     
     log("Done adding task to schedule")
     
@@ -175,8 +185,8 @@ def load_settings() -> None:
         json_settings.close()
     
     else:
-        
-        json_settings = open(settings_path, "x")
+    
+        json_settings = open(settings_path, "w")
         json_settings.close()
         
     log("Settings loaded")
@@ -301,11 +311,16 @@ def dictify_schedule() -> Json_sched:
     log(f"Dictified schedule: {dictified_schedule}")
         
     return dictified_schedule
- 
+
 def dispense(dispense_seconds: int) -> None:
     """
     Turns the dispensing motor.
     """
+    
+    if dispense_seconds < 0 or not type(dispense_seconds, int):
+        
+        raise ValueError("dispense_seconds must be a positive int or 0")
+    
     log(f"Dispensing for {dispense_seconds} seconds")
     motor.forward()
     time.sleep(dispense_seconds)
