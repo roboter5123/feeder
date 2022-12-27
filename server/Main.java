@@ -33,12 +33,13 @@ public class Main {
 
             try {
 
-                socketConnector.start_connector();
+                socketConnector.start_connector(database);
 
 
-            } catch (IOException e) {
+            } catch (IOException | SQLException e) {
 
                 throw new RuntimeException(e);
+
             }
         });
 
@@ -114,17 +115,26 @@ public class Main {
         if (resultSet.getTimestamp("validthru").compareTo(currentTime) < 1){
 
 //          delete token from db
+            deleteToken(email);
             return false;
         }
 
         if (!resultSet.getString("token").equals(token)){
 
 //            Maybe delete token from db for security?
+            deleteToken(email);
             return false;
         }
 
         return true;
 
+    }
+
+    public static void deleteToken(String email) throws SQLException {
+
+        PreparedStatement myStmt = database.prepareStatement("UPDATE user SET token = null, validthru = null WHERE email = ?");
+        myStmt.setString(1,email);
+        myStmt.execute();
     }
 
     static public String addTask(Request req, SocketConnector socketConnector) throws SQLException {

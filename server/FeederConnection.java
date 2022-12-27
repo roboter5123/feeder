@@ -6,7 +6,7 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.util.UUID;
 
-public class Connection {
+public class FeederConnection {
 
     int port;
     InetAddress ip;
@@ -14,8 +14,9 @@ public class Connection {
     PrintWriter out;
     UUID uuid;
     Socket client;
+    String email;
 
-    public Connection(int port, Socket client) throws IOException {
+    public FeederConnection(int port, Socket client) throws IOException {
 
         this.client = client;
         this.port = port;
@@ -24,6 +25,7 @@ public class Connection {
         out = new PrintWriter(client.getOutputStream(), true);
         String sentUUID = in.readLine();
         uuid = UUID.fromString(sentUUID);
+        email = in.readLine();
     }
 
     public void sendCommand(String command) {
