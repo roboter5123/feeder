@@ -51,6 +51,21 @@ public class Main {
         post("/add", (req, res) -> addTask(req, socketConnector));
         post("/dispense", (req, res) -> dispense(req, socketConnector));
         post("/login", (req, res) -> login(req));
+        post("/logout", (req, res) -> logout(req));
+
+
+    }
+
+    private static boolean logout(Request req) throws SQLException {
+
+        String email = getParameterFrmReqest(req, "email");
+        deleteToken(email);
+        return true;
+    }
+
+    private static String getParameterFrmReqest(Request req, String parameterName) {
+
+        return gson.fromJson(req.body(), JsonObject.class).get(parameterName).getAsString();
 
     }
 
@@ -64,7 +79,7 @@ public class Main {
 
     static public String login(Request req) throws SQLException {
 
-        String email = gson.fromJson(req.body(), JsonObject.class).get("email").getAsString();
+        String email = getParameterFrmReqest(req, "email");
         PreparedStatement myStmt;
         myStmt = database.prepareStatement("SELECT password from user where email = ?");
         myStmt.setString(1,email);
@@ -72,7 +87,7 @@ public class Main {
 
         rs.next();
         String dbPassword = rs.getString("password");
-        String password = gson.fromJson(req.body(), JsonObject.class).get("password").getAsString();
+        String password = getParameterFrmReqest(req, "password");
 
         if (!dbPassword.equals(password)){
 
@@ -139,8 +154,8 @@ public class Main {
 
     static public String addTask(Request req, SocketConnector socketConnector) throws SQLException {
 
-        String token = gson.fromJson(req.body(), JsonObject.class).get("token").getAsString();
-        String email = gson.fromJson(req.body(), JsonObject.class).get("email").getAsString();
+        String token = getParameterFrmReqest(req, "token");
+        String email = getParameterFrmReqest(req, "email");
 
         if(!checkTokenValidity(token,email)){
 
@@ -168,8 +183,8 @@ public class Main {
 
     static public String getSettings(Request req, SocketConnector socketConnector) throws SQLException {
 
-        String token = gson.fromJson(req.body(), JsonObject.class).get("token").getAsString();
-        String email = gson.fromJson(req.body(), JsonObject.class).get("email").getAsString();
+        String token = getParameterFrmReqest(req, "token");
+        String email = getParameterFrmReqest(req, "email");
 
         if(!checkTokenValidity(token,email)){
 
@@ -190,8 +205,8 @@ public class Main {
 
     public static String setSettings(Request req, SocketConnector socketConnector) throws SQLException {
 
-        String token = gson.fromJson(req.body(), JsonObject.class).get("token").getAsString();
-        String email = gson.fromJson(req.body(), JsonObject.class).get("email").getAsString();
+        String token = getParameterFrmReqest(req, "token");
+        String email = getParameterFrmReqest(req, "email");
 
         if(!checkTokenValidity(token,email)){
 
@@ -217,8 +232,8 @@ public class Main {
 
     static public String sendCommand(Request req, SocketConnector socketConnector) throws SQLException {
 
-        String token = gson.fromJson(req.body(), JsonObject.class).get("token").getAsString();
-        String email = gson.fromJson(req.body(), JsonObject.class).get("email").getAsString();
+        String token = getParameterFrmReqest(req, "token");
+        String email = getParameterFrmReqest(req, "email");
 
         if(!checkTokenValidity(token,email)){
 
@@ -255,8 +270,8 @@ public class Main {
 
     static public String dispense(Request req, SocketConnector socketConnector) throws SQLException {
 
-        String token = gson.fromJson(req.body(), JsonObject.class).get("token").getAsString();
-        String email = gson.fromJson(req.body(), JsonObject.class).get("email").getAsString();
+        String token = getParameterFrmReqest(req, "token");
+        String email = getParameterFrmReqest(req, "email");
 
         if(!checkTokenValidity(token,email)){
 
