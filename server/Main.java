@@ -45,13 +45,13 @@ public class Main {
 
         connectorThread.start();
 
-        post("/command", (req, res) -> sendCommand(req, socketConnector));
-        get("/settings", (req, res) -> getSettings(req, socketConnector));
-        post("/setsettings", (req, res) -> setSettings(req, socketConnector));
-        post("/add", (req, res) -> addTask(req, socketConnector));
-        post("/dispense", (req, res) -> dispense(req, socketConnector));
-        post("/login", (req, res) -> login(req));
-        post("/logout", (req, res) -> logout(req));
+        post("/api/command", (req, res) -> sendCommand(req, socketConnector));
+        get("/api/settings", (req, res) -> getSettings(req, socketConnector));
+        post("/api/setsettings", (req, res) -> setSettings(req, socketConnector));
+        post("/api/add", (req, res) -> addTask(req, socketConnector));
+        post("/api/dispense", (req, res) -> dispense(req, socketConnector));
+        post("/api/login", (req, res) -> login(req));
+        post("/api/logout", (req, res) -> logout(req));
 
 
     }
