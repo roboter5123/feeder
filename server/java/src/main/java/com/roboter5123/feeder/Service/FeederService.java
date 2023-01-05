@@ -2,6 +2,7 @@ package com.roboter5123.feeder.Service;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.roboter5123.feeder.controller.DatabaseController;
 import com.roboter5123.feeder.controller.SocketController;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,31 +51,56 @@ public class FeederService {
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
     @RequestMapping(value = "/api/login", method = RequestMethod.POST)
+    @ResponseBody
     public String login(@RequestBody com.roboter5123.feeder.beans.RequestBody login) throws SQLException {
 
-        String email = login.getEmail();
-        String password = login.getPassword();
+        JsonObject response = new JsonObject();
+        String email;
+        String password;
+
+        try {
+
+            email = login.getEmail();
+            password = login.getPassword();
+
+        } catch (Exception e) {
+
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
+        }
+
         PreparedStatement myStmt;
         myStmt = databaseController.prepareStatement("SELECT password from user where email = ?");
         myStmt.setString(1, email);
         ResultSet rs = myStmt.executeQuery();
 
-        rs.next();
+        if (!rs.next()) {
+
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
+
+        }
+
         String dbPassword = rs.getString("password");
 
         if (!dbPassword.equals(password)) {
 
-            return "false";
+            response.add("success", new JsonPrimitive(false));
+
+        } else {
+
+            response.add("success", new JsonPrimitive(true));
+            String token = generateNewToken();
+            response.add("token", new JsonPrimitive(token));
+            Timestamp expirationTime = new Timestamp((long) (System.currentTimeMillis() + 8.64e+7));
+            myStmt = databaseController.prepareStatement("UPDATE user SET token = ?, validthru = ? where email = ?");
+            myStmt.setString(1, token);
+            myStmt.setTimestamp(2, expirationTime);
+            myStmt.setString(3, email);
+            myStmt.execute();
         }
 
-        String token = generateNewToken();
-        Timestamp expirationTime = new Timestamp((long) (System.currentTimeMillis() + 8.64e+7));
-        myStmt = databaseController.prepareStatement("UPDATE user SET token = ?, validthru = ? where email = ?");
-        myStmt.setString(1, token);
-        myStmt.setTimestamp(2, expirationTime);
-        myStmt.setString(3, email);
-        myStmt.execute();
-        return token;
+        return response.toString();
     }
 
     /**
@@ -97,10 +123,11 @@ public class FeederService {
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
     @RequestMapping(value = "/api/logout", method = RequestMethod.POST)
-    public boolean logout(@RequestBody com.roboter5123.feeder.beans.RequestBody logout) throws SQLException {
+    public String logout(@RequestBody com.roboter5123.feeder.beans.RequestBody logout) throws SQLException {
 
-        return deleteToken(logout.getEmail());
-
+        JsonObject response = new JsonObject();
+        response.add("success", new JsonPrimitive(deleteToken(logout.getEmail())));
+        return response.toString();
     }
 
     /**
@@ -114,7 +141,8 @@ public class FeederService {
 
         PreparedStatement myStmt = databaseController.prepareStatement("UPDATE user SET token = null, validthru = null WHERE email = ?");
         myStmt.setString(1, email);
-        return myStmt.execute();
+
+        return myStmt.executeUpdate() > 0;
     }
 
     /**
@@ -126,17 +154,44 @@ public class FeederService {
     @RequestMapping(value = "/api/getSettings", method = RequestMethod.GET)
     public String getSettings(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException, IOException {
 
-        String token = requestBody.getToken();
-        String email = requestBody.getEmail();
-        UUID uuid = UUID.fromString(requestBody.getUuid());
+        JsonObject response = new JsonObject();
+        String token;
+        String email;
+        UUID uuid;
+
+        try {
+
+            token = requestBody.getToken();
+            email = requestBody.getEmail();
+            uuid = UUID.fromString(requestBody.getUuid());
+
+        } catch (Exception e) {
+
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
+        }
 
         if (checkTokenInValidity(token, email)) {
 
-            return "Unauthorized";
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
         }
 
         String message = "get#settings";
-        return socketController.sendMessage(message, uuid);
+        String feederResponse = socketController.sendMessage(message, uuid);
+
+        if (feederResponse != null) {
+
+            JsonObject json = gson.fromJson(feederResponse, JsonObject.class);
+            response.add("settings", json);
+            response.add("success", new JsonPrimitive(true));
+
+        } else {
+
+            response.add("success", new JsonPrimitive(false));
+        }
+
+        return response.toString();
     }
 
     /**
@@ -148,19 +203,45 @@ public class FeederService {
     @RequestMapping(value = "/api/setSettings", method = RequestMethod.POST)
     public String setSettings(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException, IOException {
 
-        String token = requestBody.getToken();
-        String email = requestBody.getEmail();
-        UUID uuid = UUID.fromString(requestBody.getUuid());
+        JsonObject response = new JsonObject();
+        String token;
+        String email;
+        UUID uuid;
+
+        try {
+
+            token = requestBody.getToken();
+            email = requestBody.getEmail();
+            uuid = UUID.fromString(requestBody.getUuid());
+
+        } catch (Exception e) {
+
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
+        }
 
         if (checkTokenInValidity(token, email)) {
 
-            return "Unauthorized";
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
         }
 
         String command = "set";
         String message = command + "#" + requestBody.getArgs();
-        System.out.println(message);
-        return socketController.sendMessage(message, uuid);
+        String feederResponse = socketController.sendMessage(message, uuid);
+
+        if (feederResponse != null) {
+
+            JsonObject json = gson.fromJson(feederResponse, JsonObject.class);
+            response.add("settings", json);
+            response.add("success", new JsonPrimitive(true));
+
+        } else {
+
+            response.add("success", new JsonPrimitive(false));
+        }
+
+        return response.toString();
 
     }
 
@@ -174,16 +255,30 @@ public class FeederService {
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
     @RequestMapping(value = "/api/add", method = RequestMethod.POST)
-    public String addTask(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException {
+    public String addTask(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException{
 
-        String token = requestBody.getToken();
-        String email = requestBody.getEmail();
-        UUID uuid = UUID.fromString(requestBody.getUuid());
-        JsonObject args = gson.fromJson(requestBody.getArgs(), JsonObject.class);
+        JsonObject response = new JsonObject();
+        String token;
+        String email;
+        UUID uuid;
+        JsonObject args;
+
+        try {
+
+            token = requestBody.getToken();
+            email = requestBody.getEmail();
+            uuid = UUID.fromString(requestBody.getUuid());
+            args = gson.fromJson(requestBody.getArgs(), JsonObject.class);
+        } catch (Exception e) {
+
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
+        }
 
         if (checkTokenInValidity(token, email)) {
 
-            return "Unauthorized";
+            response.add("success", new JsonPrimitive(false));
+            return response.toString();
         }
 
         try {
@@ -194,13 +289,25 @@ public class FeederService {
             message += args.get("day").getAsString() + "#";
             message += args.get("time").getAsString() + "#";
             message += args.get("amount").getAsString();
-            System.out.println(message);
-            return socketController.sendMessage(message, uuid);
+            String feederResponse = socketController.sendMessage(message, uuid);
+
+            if (feederResponse != null) {
+
+                JsonObject json = gson.fromJson(feederResponse, JsonObject.class);
+                response.add("settings", json);
+                response.add("success", new JsonPrimitive(true));
+
+            } else {
+
+                response.add("success", new JsonPrimitive(false));
+            }
 
         } catch (Exception e) {
 
-            return e.toString();
+            response.add("success", new JsonPrimitive(false));
         }
+
+        return response.toString();
     }
 
     /**
@@ -211,7 +318,8 @@ public class FeederService {
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
     @RequestMapping(value = "/api/command", method = RequestMethod.POST)
-    public String sendCommand(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException {
+    public String sendCommand(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws
+            SQLException {
 
         String token = requestBody.getToken();
         String email = requestBody.getEmail();
