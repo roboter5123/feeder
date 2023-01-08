@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -44,6 +47,68 @@ public class FeederService {
     }
 
     /**
+     * Registers an account for a first time user.
+     *
+     * @param requestBody
+     * @return
+     * @throws SQLException
+     */
+    @RequestMapping(value = "/api/register", method = RequestMethod.POST)
+    @ResponseBody
+    public String register(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException, NoSuchAlgorithmException {
+
+        JsonObject response = new JsonObject();
+        String email = requestBody.getEmail();
+        String password = requestBody.getPassword();
+
+        if (isEmailRegistered(email)) {
+
+            response.add("success", new JsonPrimitive(false));
+
+        } else {
+
+            byte[] salt = generateSalt();
+            password = saltAndHashPassword(password, salt);
+
+            PreparedStatement myStmt = databaseController.prepareStatement("INSERT INTO user (email,password,salt) VALUES (?, ?, ?) ");
+            myStmt.setString(1, email);
+            myStmt.setString(2, password);
+            myStmt.setString(3, Base64.getEncoder().encodeToString(salt));
+            myStmt.execute();
+            response.add("success", new JsonPrimitive(true));
+        }
+
+        return response.toString();
+
+    }
+
+    private byte[] generateSalt() {
+
+        SecureRandom random = new SecureRandom();
+        byte[] salt = new byte[16];
+        random.nextBytes(salt);
+        return salt;
+    }
+
+    private String saltAndHashPassword(String password, byte[] salt) throws NoSuchAlgorithmException {
+
+        MessageDigest md = MessageDigest.getInstance("SHA-512");
+        md.update(salt);
+        byte[] passwordBytes = password.getBytes(StandardCharsets.UTF_8);
+        byte[] hashedPassword = md.digest(passwordBytes);
+        return Base64.getEncoder().encodeToString(hashedPassword);
+    }
+
+    private boolean isEmailRegistered(String email) throws SQLException {
+
+        PreparedStatement myStmt = databaseController.prepareStatement("SELECT email FROM user WHERE email = ?");
+        myStmt.setString(1, email);
+        ResultSet rs = myStmt.executeQuery();
+
+        return rs.next();
+    }
+
+    /**
      * Logs the user in with the provided email and password
      *
      * @param login A POJO made from the request JSON must include at least email and password
@@ -52,7 +117,7 @@ public class FeederService {
      */
     @RequestMapping(value = "/api/login", method = RequestMethod.POST)
     @ResponseBody
-    public String login(@RequestBody com.roboter5123.feeder.beans.RequestBody login) throws SQLException {
+    public String login(@RequestBody com.roboter5123.feeder.beans.RequestBody login) throws SQLException, NoSuchAlgorithmException {
 
         JsonObject response = new JsonObject();
         String email;
@@ -70,7 +135,7 @@ public class FeederService {
         }
 
         PreparedStatement myStmt;
-        myStmt = databaseController.prepareStatement("SELECT password from user where email = ?");
+        myStmt = databaseController.prepareStatement("SELECT password, salt FROM user WHERE email = ?");
         myStmt.setString(1, email);
         ResultSet rs = myStmt.executeQuery();
 
@@ -82,6 +147,8 @@ public class FeederService {
         }
 
         String dbPassword = rs.getString("password");
+        byte[] salt = Base64.getDecoder().decode(rs.getString("salt"));
+        password = saltAndHashPassword(password, salt);
 
         if (!dbPassword.equals(password)) {
 
@@ -255,7 +322,7 @@ public class FeederService {
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
     @RequestMapping(value = "/api/add", method = RequestMethod.POST)
-    public String addTask(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException{
+    public String addTask(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException {
 
         JsonObject response = new JsonObject();
         String token;
