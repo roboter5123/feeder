@@ -18,6 +18,11 @@ body{
 
 }
 
+.flex-box{
+
+    display: flex;
+}
+
 img{
 
     max-width: 100%;

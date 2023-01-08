@@ -7,7 +7,6 @@ import com.roboter5123.feeder.controller.DatabaseController;
 import com.roboter5123.feeder.controller.SocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -33,24 +32,11 @@ public class FeederService {
     Gson gson;
 
     /**
-     * Get method to send back the Frontend
-     *
-     * @return HTML Frontend
-     */
-    @RequestMapping(value = "/", method = RequestMethod.GET)
-    @ResponseBody
-    public ModelAndView getHome() {
-
-        ModelAndView modelAndView = new ModelAndView();
-        modelAndView.setViewName("index.html");
-        return modelAndView;
-    }
-
-    /**
      * Registers an account for a first time user.
+     * Hashes and salts the users password before saving it to the database.
      *
      * @param requestBody
-     * @return
+     * @return A JSON that signifies the status of the registration.
      * @throws SQLException
      */
     @RequestMapping(value = "/api/register", method = RequestMethod.POST)
@@ -82,6 +68,9 @@ public class FeederService {
 
     }
 
+    /**
+     * @return Byte Array for salting
+     */
     private byte[] generateSalt() {
 
         SecureRandom random = new SecureRandom();
@@ -90,6 +79,12 @@ public class FeederService {
         return salt;
     }
 
+    /**
+     * @param password Password to be hashed and salted
+     * @param salt Byte array for salting
+     * @return A hashed and salted password for saving to the database or comparing to a known password
+     * @throws NoSuchAlgorithmException
+     */
     private String saltAndHashPassword(String password, byte[] salt) throws NoSuchAlgorithmException {
 
         MessageDigest md = MessageDigest.getInstance("SHA-512");
@@ -99,6 +94,11 @@ public class FeederService {
         return Base64.getEncoder().encodeToString(hashedPassword);
     }
 
+    /**
+     * @param email The email to check for in the database
+     * @return Signifies if the email exists in the database.
+     * @throws SQLException
+     */
     private boolean isEmailRegistered(String email) throws SQLException {
 
         PreparedStatement myStmt = databaseController.prepareStatement("SELECT email FROM user WHERE email = ?");
