@@ -33,6 +33,7 @@ $(document).ready(function () {
             }
         })
     }
+
     function setupFeederSelects() {
 
         let selects = $(".feederSelect")
@@ -42,14 +43,13 @@ $(document).ready(function () {
             Object.keys(feeders).forEach(function (key) {
 
                 let feeder = $("<option></option>").text(key)
-                feeder.attr("value",feeders[key])
+                feeder.attr("value", feeders[key])
                 $(selects[i]).append(feeder)
             })
         }
 
 
     }
-
 
     $(".sidebarElement").click(function () {
 
@@ -74,7 +74,13 @@ $(document).ready(function () {
 
     $("#feedButton").click(function () {
 
-        data = {}
+        console.log(document.cookie.substring(6))
+        let token = document.cookie.substring(6)
+        let amount = $("#dispenseAmount").val()
+        let uuid = $("#dispenseSelect").val()
+        data = {"token": token, "uuid": uuid, "args": '{"amount": ' + amount + '}'}
+        console.log(data)
+        console.log(JSON.stringify(data))
 
         $.ajax({
             "async": false,
@@ -83,7 +89,7 @@ $(document).ready(function () {
             "contentType": "application/json;",
             "data": JSON.stringify(data),
             "success": function (result) {
-                dispense(JSON.parse(result))
+                console.log(result)
             }
         })
 
@@ -93,7 +99,6 @@ $(document).ready(function () {
 
         feeders = JSON.parse(result)["uuids"]
     }
-
 
 
 })

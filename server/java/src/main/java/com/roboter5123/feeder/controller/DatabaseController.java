@@ -14,8 +14,8 @@ public class DatabaseController {
     public DatabaseController() throws SQLException {
 
         this.connection = DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/feeder",
-                "root", ""
+                "jdbc:mysql://roboter5123.com:3306/feeder",
+                "root", "Password"
         );
 
     }

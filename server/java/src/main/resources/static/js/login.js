@@ -20,7 +20,6 @@ $(document).ready(function () {
             "success": function (result) { login(JSON.parse(result))}
         })
 
-        console.log("done")
 
     })
 
