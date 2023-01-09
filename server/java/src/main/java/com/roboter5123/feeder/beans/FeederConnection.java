@@ -26,7 +26,6 @@ public class FeederConnection {
         out = new PrintWriter(client.getOutputStream(), true);
         String sentUUID = in.readLine();
         uuid = UUID.fromString(sentUUID);
-        email = in.readLine();
     }
 
     public void sendCommand(String command) {
