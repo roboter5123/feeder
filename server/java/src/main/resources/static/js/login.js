@@ -33,7 +33,9 @@ $(document).ready(function () {
         }
 
         console.log(result)
-        window.sessionStorage.setItem("token",result["token"])
+        document.cookie =`login=${result["token"]};expires=${new Date(new Date().getTime()+24*60*60*1000).toGMTString()}`
+        console.log(document.cookie)
+        window.location.replace("/")
         console.log("logged in successfully")
     }
 

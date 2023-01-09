@@ -1,8 +1,6 @@
 package com.roboter5123.feeder.Service;
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+
+import com.google.gson.*;
 import com.roboter5123.feeder.controller.DatabaseController;
 import com.roboter5123.feeder.controller.SocketController;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -81,7 +79,7 @@ public class FeederService {
 
     /**
      * @param password Password to be hashed and salted
-     * @param salt Byte array for salting
+     * @param salt     Byte array for salting
      * @return A hashed and salted password for saving to the database or comparing to a known password
      * @throws NoSuchAlgorithmException
      */
@@ -210,6 +208,28 @@ public class FeederService {
         myStmt.setString(1, email);
 
         return myStmt.executeUpdate() > 0;
+    }
+
+    @RequestMapping(value = "/api/getFeeders", method = RequestMethod.POST)
+    public String getFeeders(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException {
+
+        JsonObject response = new JsonObject();
+        String token = requestBody.getToken();
+
+        PreparedStatement myStmt = databaseController.prepareStatement("SELECT user.token, user.email, feederlookup.email, feederlookup.uuid, feederlookup.name from user JOIN feederlookup on user.email = feederlookup.email where user.token = ?;");
+        myStmt.setString(1, token);
+        ResultSet rs = myStmt.executeQuery();
+        JsonObject uuids = new JsonObject();
+
+        while(rs.next()){
+
+            uuids.add(rs.getString("name"), new JsonPrimitive(rs.getString("uuid")));
+
+        }
+
+        response.add("uuids", uuids);
+
+        return response.toString();
     }
 
     /**

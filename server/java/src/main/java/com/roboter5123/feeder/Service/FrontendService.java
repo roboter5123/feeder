@@ -10,12 +10,22 @@ public class FrontendService {
 
     @RequestMapping(value = "/", method = RequestMethod.GET)
     @ResponseBody
-    public ModelAndView getLogin() {
+    public ModelAndView getIndex() {
 
         ModelAndView modelAndView = new ModelAndView();
         modelAndView.setViewName("index.html");
         return modelAndView;
     }
+
+    @RequestMapping(value = "/login", method = RequestMethod.GET)
+    @ResponseBody
+    public ModelAndView getLogin() {
+
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("login.html");
+        return modelAndView;
+    }
+
 
     @RequestMapping(value = "/register", method = RequestMethod.GET)
     @ResponseBody
