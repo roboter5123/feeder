@@ -23,8 +23,8 @@ public class SocketController extends Thread {
     private final DatabaseController database;
 
     public SocketController(DatabaseController database) {
-
         this.database = database;
+
 
         this.port = 8058;
         this.connections = new HashMap<>();
@@ -70,28 +70,27 @@ public class SocketController extends Thread {
         myStmt.setString(1, newConnection.getUuid().toString());
         ResultSet rs = myStmt.executeQuery();
 
-        while(rs.next()){
+        if (!rs.next()) {
 
-            if (rs.getString("uuid") == null){
-
-                myStmt = database.prepareStatement("INSERT INTO feeder(uuid, email) VALUES(?,?)");
-                myStmt.setString(1,newConnection.getUuid().toString());
-                myStmt.setString(2, newConnection.getEmail());
-
-            }else {
-
-                myStmt = database.prepareStatement("UPDATE feeder SET email = ? where uuid = ?");
-                myStmt.setString(2,newConnection.getUuid().toString());
-                myStmt.setString(1, newConnection.getEmail());
-            }
+            myStmt = database.prepareStatement("INSERT INTO feeder(uuid) VALUES(?)");
+            myStmt.setString(1, newConnection.getUuid().toString());
+            myStmt.execute();
         }
 
-        connections.put(newConnection.getUuid(), newConnection);
+        this.connections.put(newConnection.getUuid(), newConnection);
+        System.out.println("connected with " + newConnection.getUuid().
+
+                toString());
+    }
+
+    public FeederConnection getConnection(UUID uuid) {
+
+        return this.connections.get(uuid);
     }
 
     public String sendMessage(String message, UUID uuid) throws IOException {
 
-        FeederConnection connection =  connections.get(uuid);
+        FeederConnection connection = this.getConnection(uuid);
         connection.sendCommand(message);
         return connection.receiveResponse();
     }

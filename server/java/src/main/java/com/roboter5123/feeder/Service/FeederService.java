@@ -24,6 +24,7 @@ public class FeederService {
 
     @Autowired
     DatabaseController databaseController;
+
     @Autowired
     SocketController socketController;
     @Autowired
@@ -183,7 +184,7 @@ public class FeederService {
     }
 
     /**
-     * @param logout A POJO made from the request JSON must include at least email
+     * @param logout A POJO made from the request JSON must include at least token
      * @return Todo: Find out what i am supposed to write here
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
@@ -191,21 +192,21 @@ public class FeederService {
     public String logout(@RequestBody com.roboter5123.feeder.beans.RequestBody logout) throws SQLException {
 
         JsonObject response = new JsonObject();
-        response.add("success", new JsonPrimitive(deleteToken(logout.getEmail())));
+        response.add("success", new JsonPrimitive(deleteToken(logout.getToken())));
         return response.toString();
     }
 
     /**
      * Deletes a token from the database. Thus locking the user out of using all other methods but login.
      *
-     * @param email Used to find the user in the database
+     * @param token Used to find the user in the database
      * @return Todo: Find out what i am supposed to write here
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
-    public boolean deleteToken(String email) throws SQLException {
+    public boolean deleteToken(String token) throws SQLException {
 
         PreparedStatement myStmt = databaseController.prepareStatement("UPDATE user SET token = null, validthru = null WHERE email = ?");
-        myStmt.setString(1, email);
+        myStmt.setString(1, token);
 
         return myStmt.executeUpdate() > 0;
     }
@@ -258,7 +259,7 @@ public class FeederService {
             return response.toString();
         }
 
-        if (checkTokenInValidity(token, email)) {
+        if (checkTokenInValidity(token)) {
 
             response.add("success", new JsonPrimitive(false));
             return response.toString();
@@ -307,7 +308,7 @@ public class FeederService {
             return response.toString();
         }
 
-        if (checkTokenInValidity(token, email)) {
+        if (checkTokenInValidity(token)) {
 
             response.add("success", new JsonPrimitive(false));
             return response.toString();
@@ -362,7 +363,7 @@ public class FeederService {
             return response.toString();
         }
 
-        if (checkTokenInValidity(token, email)) {
+        if (checkTokenInValidity(token)) {
 
             response.add("success", new JsonPrimitive(false));
             return response.toString();
@@ -414,7 +415,7 @@ public class FeederService {
         String command = requestBody.getCommand();
         JsonObject args = gson.fromJson(requestBody.getArgs(), JsonObject.class);
 
-        if (checkTokenInValidity(token, email)) {
+        if (checkTokenInValidity(token)) {
 
             return "Unauthorized";
         }
@@ -438,18 +439,26 @@ public class FeederService {
         }
     }
 
+    /**
+     * Dispenses for a specified amount
+     *
+     * @param requestBody A POJO made from the request JSON must include at least token, the uuid of the device, a command and a json of args fitting the command
+     * @return
+     * @throws SQLException
+     */
     @RequestMapping(value = "/api/dispense", method = RequestMethod.POST)
     public String dispense(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException {
 
+        JsonObject response = new JsonObject();
         String token = requestBody.getToken();
-        String email = requestBody.getEmail();
         UUID uuid = UUID.fromString(requestBody.getUuid());
         String command = "dispense";
         JsonObject args = gson.fromJson(requestBody.getArgs(), JsonObject.class);
 
-        if (checkTokenInValidity(token, email)) {
+        if (checkTokenInValidity(token)) {
 
-            return "Unauthorized";
+            response.add("success" , new JsonPrimitive(false));
+            return response.toString();
         }
 
         try {
@@ -468,14 +477,13 @@ public class FeederService {
      * Checks if a token is valid for a given email address
      *
      * @param token The token which should be checked for validity
-     * @param email The email of the user whose token should be checked.
      * @return Boolean that signifies validity
      * @throws SQLException Todo: Find out what i am supposed to write here
      */
-    public boolean checkTokenInValidity(String token, String email) throws SQLException {
+    public boolean checkTokenInValidity(String token) throws SQLException {
 
-        PreparedStatement myStmt = databaseController.prepareStatement("SELECT * FROM user WHERE email = ?");
-        myStmt.setString(1, email);
+        PreparedStatement myStmt = databaseController.prepareStatement("SELECT * FROM user WHERE token = ?");
+        myStmt.setString(1, token);
         ResultSet resultSet = myStmt.executeQuery();
 
         resultSet.next();
@@ -489,14 +497,14 @@ public class FeederService {
         if (resultSet.getTimestamp("validthru").compareTo(currentTime) < 1) {
 
 //          delete token from db
-            deleteToken(email);
+            deleteToken(token);
             return true;
         }
 
         if (!resultSet.getString("token").equals(token)) {
 
 //            Maybe delete token from db for security?
-            deleteToken(email);
+            deleteToken(token);
             return true;
         }
 
