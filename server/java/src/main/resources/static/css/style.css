@@ -182,17 +182,22 @@ main .row:first-child {
     font-size: 1rem;
     font-style: normal;
     text-align: center;
+
 }
 
 .dayTasks{
 
     margin: 0;
-    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-.dayTasks p{
 
-    margin: 0;
+.scheduleAmount{
+
+    width: 80px;
 }
 
 

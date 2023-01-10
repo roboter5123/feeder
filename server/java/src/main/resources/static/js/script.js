@@ -18,7 +18,7 @@ $(document).ready(function () {
         setupFeederSelects()
     }
 
-    function checkCookie(){
+    function checkCookie() {
 
         let token = document.cookie.substring(6)
         let cookieValidity = false;
@@ -36,7 +36,7 @@ $(document).ready(function () {
                 console.log(result)
                 cookieValidity = result["success"]
 
-                if (cookieValidity === false){
+                if (cookieValidity === false) {
 
                     document.cookie = "login= ; expires = Thu, 01 Jan 1970 00:00:00 GMT"
                 }
@@ -88,7 +88,7 @@ $(document).ready(function () {
             burger()
             return
 
-        }else if(data === "schedule"){
+        } else if (data === "schedule") {
 
             setupSchedule($("#scheduleSelect").val())
         }
@@ -104,27 +104,30 @@ $(document).ready(function () {
         $("#sidebar").toggleClass("active")
     }
 
-    function setupSchedule(uuid){
+    function setupSchedule(uuid = undefined) {
 
-        let token = document.cookie.substring(6)
-        let data = {"token": token, "uuid": uuid}
+        if (uuid !== undefined) {
 
-        $.ajax({
-            "async": false,
-            "url": "/api/getSchedule",
-            "type": "POST",
-            "contentType": "application/json;",
-            "data": JSON.stringify(data),
-            "success": function (result){
+            let token = document.cookie.substring(6)
+            let data = {"token": token, "uuid": uuid}
 
-                result = JSON.parse(result)
-                schedule = result["schedule"]
-                 Object.keys(schedule).forEach(function (key){
+            $.ajax({
+                "async": false,
+                "url": "/api/getSchedule",
+                "type": "POST",
+                "contentType": "application/json;",
+                "data": JSON.stringify(data),
+                "success": function (result) {
 
-                     schedule[key] = JSON.parse(result["schedule"][key])
-                 })
-            }
-        })
+                    result = JSON.parse(result)
+                    schedule = result["schedule"]
+                    Object.keys(schedule).forEach(function (key) {
+
+                        schedule[key] = JSON.parse(result["schedule"][key])
+                    })
+                }
+            })
+        }
 
         let days = $(".weekday")
 
@@ -134,20 +137,61 @@ $(document).ready(function () {
             $(days[i]).find(".dayTasks").empty();
             let currentSchedule = schedule[day]
 
-            if (currentSchedule.length === 0){
+            if (currentSchedule.length === 0) {
 
                 continue
             }
 
-            Object.keys(currentSchedule).forEach(function (key){
+            Object.keys(currentSchedule).forEach(function (key) {
 
-                let element = $("<p></p>").text(key + " : " + currentSchedule[key])
+                let element = $("<div></div>")
+
+                let time = $('<input type="time" class="scheduleTime"/>').val(key)
+                time.attr("data-time", key)
+                time.change(function () {
+                    updateTime(this, day)
+                })
+
+                let amount = $('<input type="number" class="scheduleAmount" min = "0"/>').val(currentSchedule[key])
+                amount.change(function (){
+
+                    updateAmount(this, day)
+                })
+                element.append(time)
+                element.append(amount)
                 $(days[i]).find(".dayTasks").append(element)
             })
         }
     }
 
-    $("#scheduleSelect").change(function (){
+    function updateAmount(element, day) {
+
+        let time = $(element).siblings("input[type='time']").attr("data-time")
+        schedule[day][time] = parseInt($(element).val())
+        console.log(schedule)
+
+    }
+
+    function updateTime(element, day) {
+
+        let time = $(element).val()
+        let oldTime = $(element).attr("data-time")
+
+        if (schedule[day][time] === undefined) {
+
+            schedule[day][time] = schedule[day][oldTime]
+
+        } else {
+
+            schedule[day][time] = schedule[day][oldTime]
+        }
+
+        delete schedule[day][oldTime]
+
+        setupSchedule()
+    }
+
+    $("#scheduleSelect").change(function () {
 
         setupSchedule($(this).val())
     })
