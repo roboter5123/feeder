@@ -7,7 +7,7 @@ $(document).ready(function () {
 
     function init() {
 
-        if (document.cookie.length < 1) {
+        if (document.cookie.length < 1 || checkCookie()) {
 
             window.location.replace("/login")
             return
@@ -15,6 +15,34 @@ $(document).ready(function () {
 
         getFeeders()
         setupFeederSelects()
+    }
+
+    function checkCookie(){
+
+        let token = document.cookie.substring(6)
+        let cookieValidity = false;
+        data = {"token": token}
+
+        $.ajax({
+            "async": false,
+            "url": "/api/checkCookie",
+            "type": "POST",
+            "contentType": "application/json;",
+            "data": JSON.stringify(data),
+            "success": function (result) {
+
+                result = JSON.parse(result)
+                console.log(result)
+                cookieValidity = result["success"]
+
+                if (cookieValidity === false){
+
+                    document.cookie = "login= ; expires = Thu, 01 Jan 1970 00:00:00 GMT"
+                }
+            }
+        })
+
+        return !cookieValidity
     }
 
     function getFeeders() {
@@ -59,6 +87,10 @@ $(document).ready(function () {
 
             burger()
             return
+
+        }else if(data === "schedule"){
+
+            setupSchedule($("#scheduleSelect").val())
         }
 
         curScreen.toggleClass("active")
@@ -70,6 +102,31 @@ $(document).ready(function () {
     function burger() {
 
         $("#sidebar").toggleClass("active")
+    }
+
+    function setupSchedule(uuid){
+
+        let token = document.cookie.substring(6)
+        let data = {"token": token, "uuid": uuid}
+
+        $.ajax({
+            "async": false,
+            "url": "/api/getSchedule",
+            "type": "POST",
+            "contentType": "application/json;",
+            "data": JSON.stringify(data),
+            "success": function (result){
+
+                console.log(result)
+                result = result.split("\\").join("")
+                console.log(result)
+                result= "{" + result.split('{\"').join("")
+                console.log(result)
+                result = JSON.parse(result)
+                console.log(result)
+
+            }
+        })
     }
 
     $("#feedButton").click(function () {

@@ -23,9 +23,8 @@ public class SocketController extends Thread {
     private final DatabaseController database;
 
     public SocketController(DatabaseController database) {
+
         this.database = database;
-
-
         this.port = 8058;
         this.connections = new HashMap<>();
 
@@ -36,11 +35,9 @@ public class SocketController extends Thread {
         } catch (IOException e) {
 
             throw new RuntimeException(e);
-
         }
 
         this.start();
-
     }
 
     public void run() {
@@ -49,15 +46,22 @@ public class SocketController extends Thread {
 
         while (running) {
 
-            FeederConnection newConnection = null;
+            FeederConnection newConnection;
+
             try {
                 newConnection = new FeederConnection(port, server.accept());
+
             } catch (IOException e) {
+
                 throw new RuntimeException(e);
             }
+
             try {
+
                 addConnection(newConnection);
+
             } catch (SQLException e) {
+
                 throw new RuntimeException(e);
             }
         }
