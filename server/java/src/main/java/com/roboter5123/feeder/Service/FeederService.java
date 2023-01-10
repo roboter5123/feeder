@@ -1,12 +1,14 @@
 package com.roboter5123.feeder.Service;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import com.roboter5123.feeder.controller.DatabaseController;
 import com.roboter5123.feeder.controller.SocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -317,166 +319,6 @@ public class FeederService {
         return response.toString();
     }
 
-    /**
-     * @param requestBody A POJO made from the request JSON must include at least email, token and the uuid of the device
-     * @return Settings JSON from the device
-     * @throws SQLException Todo: Find out what i am supposed to write here
-     * @throws IOException  Todo: Find out what i am supposed to write here
-     */
-    @RequestMapping(value = "/api/getSettings", method = RequestMethod.GET)
-    public String getSettings(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws
-            SQLException, IOException {
-
-        JsonObject response = new JsonObject();
-        String token;
-        UUID uuid;
-
-        try {
-
-            token = requestBody.getToken();
-            uuid = UUID.fromString(requestBody.getUuid());
-
-        } catch (Exception e) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
-        if (checkTokenInValidity(token)) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
-        String message = "get#settings";
-        String feederResponse = socketController.sendMessage(message, uuid);
-
-        if (feederResponse != null) {
-
-            JsonObject json = gson.fromJson(feederResponse, JsonObject.class);
-            response.add("settings", json);
-            response.add("success", new JsonPrimitive(true));
-
-        } else {
-
-            response.add("success", new JsonPrimitive(false));
-        }
-
-        return response.toString();
-    }
-
-    /**
-     * @param requestBody A POJO made from the request JSON must include at least email, token and the uuid of the device
-     * @return Todo: Find out what i am supposed to write here
-     * @throws SQLException Todo: Find out what i am supposed to write here
-     * @throws IOException  Todo: Find out what i am supposed to write here
-     */
-    @RequestMapping(value = "/api/setSettings", method = RequestMethod.POST)
-    public String setSettings(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws
-            SQLException, IOException {
-
-        JsonObject response = new JsonObject();
-        String token;
-        UUID uuid;
-
-        try {
-
-            token = requestBody.getToken();
-            uuid = UUID.fromString(requestBody.getUuid());
-
-        } catch (Exception e) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
-        if (checkTokenInValidity(token)) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
-        String command = "set";
-        String message = command + "#" + requestBody.getArgs();
-        String feederResponse = socketController.sendMessage(message, uuid);
-
-        if (feederResponse != null) {
-
-            JsonObject json = gson.fromJson(feederResponse, JsonObject.class);
-            response.add("settings", json);
-            response.add("success", new JsonPrimitive(true));
-
-        } else {
-
-            response.add("success", new JsonPrimitive(false));
-        }
-
-        return response.toString();
-
-    }
-
-    /**
-     * Adds a task to the devices schedule.
-     *
-     * @param requestBody A POJO made from the request JSON must include at least email, token
-     *                    , the uuid of the device and a json String which has to include
-     *                    day, time and amount
-     * @return Todo: Find out what i am supposed to write here
-     * @throws SQLException Todo: Find out what i am supposed to write here
-     */
-    @RequestMapping(value = "/api/add", method = RequestMethod.POST)
-    public String addTask(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws SQLException {
-
-        JsonObject response = new JsonObject();
-        String token;
-        UUID uuid;
-        JsonObject args;
-
-        try {
-
-            token = requestBody.getToken();
-            uuid = UUID.fromString(requestBody.getUuid());
-            args = gson.fromJson(requestBody.getArgs(), JsonObject.class);
-        } catch (Exception e) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
-        if (checkTokenInValidity(token)) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
-        try {
-
-            String command = "add";
-            String message = command + "#";
-
-            message += args.get("day").getAsString() + "#";
-            message += args.get("time").getAsString() + "#";
-            message += args.get("amount").getAsString();
-            String feederResponse = socketController.sendMessage(message, uuid);
-
-            if (feederResponse != null) {
-
-                JsonObject json = gson.fromJson(feederResponse, JsonObject.class);
-                response.add("settings", json);
-                response.add("success", new JsonPrimitive(true));
-
-            } else {
-
-                response.add("success", new JsonPrimitive(false));
-            }
-
-        } catch (Exception e) {
-
-            response.add("success", new JsonPrimitive(false));
-        }
-
-        return response.toString();
-    }
 
     /**
      * Sends an arbitrary Command to the feeder.
@@ -551,7 +393,6 @@ public class FeederService {
         }
 
     }
-
 
     /**
      * Checks a given Cookie token for validity
