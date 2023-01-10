@@ -46,7 +46,6 @@ $(document).ready(function () {
         return !cookieValidity
     }
 
-
     function getFeeders() {
 
         let token = document.cookie.substring(6)
@@ -104,6 +103,7 @@ $(document).ready(function () {
         $("#sidebar").toggleClass("active")
     }
 
+    //TODO: make it so the tasks are in order of time not by order of being added
     function setupSchedule(uuid = undefined) {
 
         if (uuid !== undefined) {
@@ -119,6 +119,20 @@ $(document).ready(function () {
                 "data": JSON.stringify(data),
                 "success": function (result) {
 
+                    if (result === "{}") {
+
+                        schedule = {
+                            "monday": [],
+                            "tuesday": [],
+                            "wednesday": [],
+                            "thursday": [],
+                            "friday": [],
+                            "saturday": [],
+                            "sunday": [],
+                            "id": -1
+                        }
+                        return
+                    }
                     result = JSON.parse(result)
                     schedule = result["schedule"]
                     Object.keys(schedule).forEach(function (key) {
@@ -130,11 +144,13 @@ $(document).ready(function () {
         }
 
         let days = $(".weekday")
+        console.log(schedule)
 
         for (let i = 0; i < days.length; i++) {
 
             let day = $(days[i]).attr("id")
             $(days[i]).find(".dayTasks").empty();
+
             let currentSchedule = schedule[day]
 
             if (currentSchedule.length === 0) {
@@ -142,52 +158,70 @@ $(document).ready(function () {
                 continue
             }
 
-            Object.keys(currentSchedule).forEach(function (key) {
+            for (let j = 0; j < currentSchedule.length; j++) {
 
-                let element = $("<div></div>")
+                let currentTask = currentSchedule[j]
 
-                let time = $('<input type="time" class="scheduleTime"/>').val(key)
-                time.attr("data-time", key)
-                time.change(function () {
-                    updateTime(this, day)
+                if (currentTask === undefined) {
+
+                    continue
+                }
+
+                Object.keys(currentTask).forEach(function (key) {
+
+                    let element = $("<div></div>")
+                    console.log(key)
+
+                    let time = $('<input type="time" class="scheduleTime"/>').val(key)
+                    time.attr("data-time", key)
+                    time.change(function () {
+                        updateTime(this, day, j)
+                    })
+
+                    let amount = $('<input type="number" class="scheduleAmount" min = "0"/>').val(currentTask[key])
+                    amount.change(function () {
+
+                        updateAmount(this, day, j)
+                    })
+                    element.append(time)
+                    element.append(amount)
+                    $(days[i]).find(".dayTasks").append(element)
                 })
+            }
 
-                let amount = $('<input type="number" class="scheduleAmount" min = "0"/>').val(currentSchedule[key])
-                amount.change(function (){
 
-                    updateAmount(this, day)
-                })
-                element.append(time)
-                element.append(amount)
-                $(days[i]).find(".dayTasks").append(element)
-            })
         }
     }
 
-    function updateAmount(element, day) {
+    function updateAmount(element, day, index) {
 
         let time = $(element).siblings("input[type='time']").attr("data-time")
-        schedule[day][time] = parseInt($(element).val())
+        schedule[day][index][time] = parseInt($(element).val())
         console.log(schedule)
 
     }
 
-    function updateTime(element, day) {
+    function updateTime(element, day, index) {
 
         let time = $(element).val()
         let oldTime = $(element).attr("data-time")
 
-        if (schedule[day][time] === undefined) {
+        let deleteIndex
+        for (let i = 0; i < schedule[day].length; i++) {
 
-            schedule[day][time] = schedule[day][oldTime]
+            if (schedule[day][i][time] !== undefined){
 
-        } else {
-
-            schedule[day][time] = schedule[day][oldTime]
+                deleteIndex = i
+            }
         }
 
-        delete schedule[day][oldTime]
+        if (deleteIndex >= 0){
 
+            schedule[day].splice(deleteIndex,1)
+
+        }
+        schedule[day][index][time] = schedule[day][index][oldTime]
+        delete schedule[day][index][oldTime]
         setupSchedule()
     }
 
@@ -212,9 +246,31 @@ $(document).ready(function () {
             "contentType": "application/json;",
             "data": JSON.stringify(data),
             "success": function (result) {
+                console.log(result)
             }
         })
 
+    })
+
+    $("#setSchedule").click(function () {
+
+        let token = document.cookie.substring(6)
+        let args = JSON.stringify(schedule)
+        let uuid = $("#scheduleSelect").val()
+
+        let data = {"token": token, "uuid": uuid, "args": args}
+
+        $.ajax({
+            "async": false,
+            "url": "/api/setSchedule",
+            "type": "POST",
+            "contentType": "application/json;",
+            "data": JSON.stringify(data),
+            "success": function (result) {
+
+                console.log(result)
+            }
+        })
     })
 
     function extractFeeders(result) {

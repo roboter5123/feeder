@@ -1,14 +1,12 @@
 package com.roboter5123.feeder.Service;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
+import com.google.gson.*;
 import com.roboter5123.feeder.controller.DatabaseController;
 import com.roboter5123.feeder.controller.SocketController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -35,7 +33,7 @@ public class FeederService {
      * Registers an account for a first time user.
      * Hashes and salts the users password before saving it to the database.
      *
-     * @param requestBody
+     * @param requestBody A POJO made from the request JSON must include at least email and password
      * @return A JSON that signifies the status of the registration.
      */
     @RequestMapping(value = "/api/register", method = RequestMethod.POST)
@@ -53,7 +51,7 @@ public class FeederService {
 
         } catch (SQLException e) {
 
-            response.add("succes", new JsonPrimitive(false));
+            response.add("success", new JsonPrimitive(false));
             return response.toString();
         }
 
@@ -124,7 +122,7 @@ public class FeederService {
     /**
      * @param email The email to check for in the database
      * @return Signifies if the email exists in the database.
-     * @throws SQLException
+     * @throws SQLException if the database is down.
      */
     private boolean isEmailRegistered(String email) throws SQLException {
 
@@ -224,8 +222,10 @@ public class FeederService {
     }
 
     /**
+     * Deletes the token from the database thus logging the user out
+     *
      * @param logout A POJO made from the request JSON must include at least token
-     * @return Todo: Find out what i am supposed to write here
+     * @return a bool indicating succes
      */
     @RequestMapping(value = "/api/logout", method = RequestMethod.POST)
     public String logout(@RequestBody com.roboter5123.feeder.beans.RequestBody logout) {
@@ -241,7 +241,7 @@ public class FeederService {
      * Deletes a token from the database. Thus locking the user out of using all other methods but login.
      *
      * @param token Used to find the user in the database
-     * @return Todo: Find out what i am supposed to write here
+     * @return
      */
     public boolean deleteToken(String token) {
 
@@ -319,13 +319,90 @@ public class FeederService {
         return response.toString();
     }
 
+    @RequestMapping(value = "/api/setSchedule", method = RequestMethod.POST)
+    public String setSchedule(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) {
+
+        JsonObject response = new JsonObject();
+        UUID uuid = UUID.fromString(requestBody.getUuid());
+        JsonObject args = gson.fromJson(requestBody.getArgs(), JsonObject.class);
+        int scheduleId = args.get("id").getAsInt();
+        args.remove("id");
+
+        if (scheduleId <= 0){
+
+            try {
+
+                PreparedStatement myStmt = databaseController.prepareStatement("INSERT INTO schedule(monday,tuesday,wednesday,thursday,friday, saturday, sunday) VALUES(?,?,?,?,?,?,?);");
+                setScheduleInStatement(args, myStmt);
+                myStmt.execute();
+
+                myStmt = databaseController.prepareStatement("SELECT LAST_INSERT_ID() as schedule_id");
+                ResultSet rs = myStmt.executeQuery();
+                rs.next();
+                scheduleId = rs.getInt("schedule_id");
+
+                myStmt = databaseController.prepareStatement("UPDATE feeder SET schedule = ? where uuid = ?");
+                myStmt.setInt(1, scheduleId);
+                myStmt.setString(2, uuid.toString());
+                myStmt.execute();
+
+            } catch (SQLException e) {
+
+                response.add("success", new JsonPrimitive(false));
+                return response.toString();
+
+            }
+
+        }else{
+
+            try {
+
+                PreparedStatement myStmt = databaseController.prepareStatement("UPDATE schedule SET monday = ? ,tuesday = ? ,wednesday = ? ,thursday = ? ,friday = ? ,saturday = ? ,sunday = ?  where schedule_id = ?");
+                setScheduleInStatement(args, myStmt);
+                myStmt.setInt(8, scheduleId);
+                myStmt.execute();
+
+            } catch (SQLException e) {
+
+                response.add("success", new JsonPrimitive(false));
+                return response.toString();
+            }
+        }
+        JsonObject settings = new JsonObject();
+        settings.add("schedule", args);
+
+        String message = "set#" + settings;
+
+        System.out.println(message);
+
+        try {
+
+            response.add("successfull", new JsonPrimitive(socketController.sendMessage(message, uuid)));
+
+        } catch (IOException e) {
+
+            response.add("successfull", new JsonPrimitive(false));
+        }
+
+        return response.toString();
+    }
+
+    public void setScheduleInStatement(JsonObject schedule, PreparedStatement myStmt) throws SQLException {
+        myStmt.setString(1, gson.toJson(schedule.get("monday")));
+        myStmt.setString(2, gson.toJson(schedule.get("tuesday")));
+        myStmt.setString(3, gson.toJson(schedule.get("wednesday")));
+        myStmt.setString(4, gson.toJson(schedule.get("thursday")));
+        myStmt.setString(5, gson.toJson(schedule.get("friday")));
+        myStmt.setString(6, gson.toJson(schedule.get("saturday")));
+        myStmt.setString(7, gson.toJson(schedule.get("sunday")));
+    }
 
     /**
      * Sends an arbitrary Command to the feeder.
      *
      * @param requestBody A POJO made from the request JSON must include at least email, token, the uuid of the device, a command and a json of args fitting the command
-     * @return Todo: Find out what i am supposed to write here
-     * @throws SQLException Todo: Find out what i am supposed to write here
+     * @return
+     * @throws SQLException
      */
     @RequestMapping(value = "/api/command", method = RequestMethod.POST)
     public String sendCommand(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws
