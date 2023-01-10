@@ -2,6 +2,7 @@ $(document).ready(function () {
 
     let curScreen = $("#mainScreen")
     let feeders
+    let schedule
 
     init()
 
@@ -21,7 +22,7 @@ $(document).ready(function () {
 
         let token = document.cookie.substring(6)
         let cookieValidity = false;
-        data = {"token": token}
+        let data = {"token": token}
 
         $.ajax({
             "async": false,
@@ -44,6 +45,7 @@ $(document).ready(function () {
 
         return !cookieValidity
     }
+
 
     function getFeeders() {
 
@@ -75,8 +77,6 @@ $(document).ready(function () {
                 $(selects[i]).append(feeder)
             })
         }
-
-
     }
 
     $(".sidebarElement").click(function () {
@@ -117,27 +117,49 @@ $(document).ready(function () {
             "data": JSON.stringify(data),
             "success": function (result){
 
-                console.log(result)
-                result = result.split("\\").join("")
-                console.log(result)
-                result= "{" + result.split('{\"').join("")
-                console.log(result)
                 result = JSON.parse(result)
-                console.log(result)
+                schedule = result["schedule"]
+                 Object.keys(schedule).forEach(function (key){
 
+                     schedule[key] = JSON.parse(result["schedule"][key])
+                 })
             }
         })
+
+        let days = $(".weekday")
+
+        for (let i = 0; i < days.length; i++) {
+
+            let day = $(days[i]).attr("id")
+            $(days[i]).find(".dayTasks").empty();
+            let currentSchedule = schedule[day]
+
+            if (currentSchedule.length === 0){
+
+                continue
+            }
+
+            Object.keys(currentSchedule).forEach(function (key){
+
+                let element = $("<p></p>").text(key + " : " + currentSchedule[key])
+                $(days[i]).find(".dayTasks").append(element)
+            })
+        }
     }
+
+    $("#scheduleSelect").change(function (){
+
+        setupSchedule($(this).val())
+    })
 
     $("#feedButton").click(function () {
 
-        console.log(document.cookie.substring(6))
+
         let token = document.cookie.substring(6)
         let amount = $("#dispenseAmount").val()
         let uuid = $("#dispenseSelect").val()
-        data = {"token": token, "uuid": uuid, "args": '{"amount": ' + amount + '}'}
-        console.log(data)
-        console.log(JSON.stringify(data))
+
+        let data = {"token": token, "uuid": uuid, "args": '{"amount": ' + amount + '}'}
 
         $.ajax({
             "async": false,
@@ -146,7 +168,6 @@ $(document).ready(function () {
             "contentType": "application/json;",
             "data": JSON.stringify(data),
             "success": function (result) {
-                console.log(result)
             }
         })
 

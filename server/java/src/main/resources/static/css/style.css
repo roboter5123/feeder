@@ -176,6 +176,25 @@ main .row:first-child {
     width: calc((100% / 3 - (2px * 4)) * 2);
 }
 
+.weekday h2{
+
+    margin: 0;
+    font-size: 1rem;
+    font-style: normal;
+    text-align: center;
+}
+
+.dayTasks{
+
+    margin: 0;
+    padding: 5px;
+}
+
+.dayTasks p{
+
+    margin: 0;
+}
+
 
 
 
