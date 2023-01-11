@@ -1,7 +1,9 @@
 :root {
 
-    --primary: grey;
-    --secondary: black;
+    --primary: #415a77;
+    --secondary: #0d1b2a;
+    --tertiary:#778da9;
+    --text: #e0e1dd;
 
 }
 
@@ -9,6 +11,8 @@ body {
 
     margin: 0;
     height: 100vh;
+    background-color: var(--secondary);
+    color: var(--text);
 
 }
 
@@ -65,40 +69,36 @@ main .row:first-child {
 
 #sidebar {
 
-    height: 100vh;
+    height: fit-content;
     width: 60px;
-    border-right: black 1px solid;
     padding: 5px;
-    transition: all 300ms;
-}
 
-#sidebar.active {
-
-    width: 130px;
 }
 
 .sidebarElement {
 
     height: 60px;
     width: 100%;
-    margin: 5px 0;
+    padding: 5px 0;
     text-align: center;
-    display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
+    display: flex;
+    transition: all 500ms ease-in-out;
+    background-color: var(--primary);
 }
 
-.sidebarElement p {
+.sidebarElement:not(#burger) {
 
-    display: none;
-    transition: all 300ms;
+    cursor: auto;
+    opacity: 0;
 }
 
-#sidebar.active .sidebarElement p {
+#sidebar.active .sidebarElement:not(#burger){
 
-    display: inline-block;
-    margin: auto 5px;
+    cursor: pointer;
+    opacity: 100%;
 }
 
 .sidebarElement i {
@@ -134,6 +134,7 @@ main .row:first-child {
     text-align: center;
     justify-content: space-around;
     align-items: center;
+    padding: 5%;
 }
 
 .screenMain {
@@ -143,7 +144,7 @@ main .row:first-child {
     align-items: center;
     justify-content: center;
     flex-grow: 1;
-    padding: 5%;
+    padding: 0% 5% 5% calc(5% - 65px);
 }
 
 /*############################Dispense############################*/
@@ -168,7 +169,7 @@ main .row:first-child {
     padding: 5px;
     margin: 2px;
     border: black 1px solid;
-    background-color:hotpink;
+    background-color: var(--primary);
 }
 
 #scheduleControls{
@@ -182,7 +183,6 @@ main .row:first-child {
     font-size: 1rem;
     font-style: normal;
     text-align: center;
-
 }
 
 .dayTasks{
@@ -197,7 +197,38 @@ main .row:first-child {
 
 .scheduleAmount{
 
-    width: 80px;
+    width: 40px;
+    height: 20px;
+}
+
+.scheduleTime,.scheduleAmount{
+
+    background-color: var(--tertiary);
+    color: inherit;
+    outline: none;
+    border: none;
+    margin: 5px;
+}
+
+.weekday{
+
+    position:relative;
+}
+
+.addTask{
+
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+.deleteTask{
+
+    font-size: 1rem;
+    width: 20px;
+    cursor: pointer;
 }
 
 

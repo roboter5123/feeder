@@ -82,7 +82,14 @@ $(document).ready(function () {
 
         let data = $(this).attr("id")
 
-        if (data === "burger") {
+        if (!$(this).closest("#sidebar").hasClass("active") && data !== "burger"){
+
+            console.log(!$(this).hasClass("active"))
+            console.log(data)
+            return;
+        }
+
+        if (data === "burger"){
 
             burger()
             return
@@ -166,36 +173,50 @@ $(document).ready(function () {
                     continue
                 }
 
-                Object.keys(currentTask).forEach(function (key) {
 
-                    let element = $("<div></div>")
-                    console.log(key)
+                key = currentTask["time"]
+                let element = $("<div></div>")
+                console.log(key)
 
-                    let time = $('<input type="time" class="scheduleTime"/>').val(key)
-                    time.attr("data-time", key)
-                    time.change(function () {
-                        updateTime(this, day, j)
-                    })
-
-                    let amount = $('<input type="number" class="scheduleAmount" min = "0"/>').val(currentTask[key])
-                    amount.change(function () {
-
-                        updateAmount(this, day, j)
-                    })
-                    element.append(time)
-                    element.append(amount)
-                    $(days[i]).find(".dayTasks").append(element)
+                let time = $('<input type="time" class="scheduleTime"/>').val(key)
+                time.attr("data-time", key)
+                time.change(function () {
+                    updateTime(this, i, j)
                 })
+
+                let amount = $('<input type="number" class="scheduleAmount" min = "0"/>').val(currentTask["dispense_seconds"])
+                amount.change(function () {
+
+                    updateAmount(this, i, j)
+                })
+
+                let deleteTaskButton = $('<i class="fa-sharp fa-solid fa-trash deleteTask"></i>')
+                deleteTaskButton.click(function (){
+
+                    deleteTask(this, i, j)
+
+                })
+                element.append(time)
+                element.append(amount)
+                element.append(deleteTaskButton)
+                $(days[i]).find(".dayTasks").append(element)
+
             }
-
-
         }
+    }
+
+    function deleteTask(element, day, index){
+
+        schedule[day].splice(index,1)
+        setupSchedule()
     }
 
     function updateAmount(element, day, index) {
 
         let time = $(element).siblings("input[type='time']").attr("data-time")
-        schedule[day][index][time] = parseInt($(element).val())
+        let feedAmount =$(element).val()
+        schedule[day][index]["dispense_seconds"] = feedAmount
+
         console.log(schedule)
 
     }
@@ -208,19 +229,18 @@ $(document).ready(function () {
         let deleteIndex
         for (let i = 0; i < schedule[day].length; i++) {
 
-            if (schedule[day][i][time] !== undefined){
+            if (schedule[day][i]["time"] === time) {
 
                 deleteIndex = i
             }
         }
 
-        if (deleteIndex >= 0){
+        if (deleteIndex >= 0) {
 
-            schedule[day].splice(deleteIndex,1)
+            schedule[day].splice(deleteIndex, 1)
 
         }
-        schedule[day][index][time] = schedule[day][index][oldTime]
-        delete schedule[day][index][oldTime]
+        schedule[day][index]["time"] = time
         setupSchedule()
     }
 
@@ -253,6 +273,17 @@ $(document).ready(function () {
 
     $("#setSchedule").click(function () {
 
+        for (let i = 0; i < Object.keys(schedule).length-1; i++) {
+
+            console.log(i)
+            for (let j = 0; j < schedule[i].length; j++) {
+
+                if (!("time" in schedule[i][j])){
+                    schedule[i].splice(j,1)
+                }
+            }
+        }
+
         let token = document.cookie.substring(6)
         let args = JSON.stringify(schedule)
         let uuid = $("#scheduleSelect").val()
@@ -270,6 +301,33 @@ $(document).ready(function () {
                 console.log(result)
             }
         })
+    })
+
+    $(".addTask").click(function () {
+
+        let days = $(".weekday")
+        let day
+
+        for (let i = 0; i < days.length; i++) {
+
+            if ($(days[i]).attr("id") === $(this).closest(".weekday").attr("id")) {
+
+                day = i;
+            }
+        }
+
+        for (let i = 0; i < schedule[day].length; i++) {
+
+            console.log(!"time" in schedule[day][i])
+            if (!("time" in schedule[day][i])) {
+
+                setupSchedule()
+                return
+            }
+        }
+
+        schedule[day].push({})
+        setupSchedule()
     })
 
     function extractFeeders(result) {

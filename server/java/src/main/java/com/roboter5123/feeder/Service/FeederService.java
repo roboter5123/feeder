@@ -42,7 +42,7 @@ public class FeederService {
 
         JsonObject response = new JsonObject();
         String email = requestBody.getEmail();
-        String password = requestBody.getPassword();
+
         boolean isRegistered;
 
         try {
@@ -62,7 +62,7 @@ public class FeederService {
         } else {
 
             byte[] salt = generateSalt();
-
+            String password = requestBody.getPassword();
             try {
 
                 password = saltAndHashPassword(password, salt);
@@ -86,7 +86,6 @@ public class FeederService {
 
                 response.add("success", new JsonPrimitive(false));
             }
-
         }
 
         return response.toString();
@@ -127,13 +126,10 @@ public class FeederService {
     private boolean isEmailRegistered(String email) throws SQLException {
 
         PreparedStatement myStmt;
-        ResultSet rs;
-
         myStmt = databaseController.prepareStatement("SELECT email FROM user WHERE email = ?");
         myStmt.setString(1, email);
-        rs = myStmt.executeQuery();
+        ResultSet rs = myStmt.executeQuery();
         return rs.next();
-
     }
 
     /**
@@ -147,20 +143,8 @@ public class FeederService {
     public String login(@RequestBody com.roboter5123.feeder.beans.RequestBody login) {
 
         JsonObject response = new JsonObject();
-        String email;
-        String password;
-
-        try {
-
-            email = login.getEmail();
-            password = login.getPassword();
-
-        } catch (Exception e) {
-
-            response.add("success", new JsonPrimitive(false));
-            return response.toString();
-        }
-
+        String email = login.getEmail();
+        String password = login.getPassword();
         PreparedStatement myStmt;
         byte[] salt;
         String dbPassword;
@@ -202,8 +186,8 @@ public class FeederService {
         } catch (SQLException | NoSuchAlgorithmException e) {
 
             response.add("success", new JsonPrimitive(false));
-
         }
+
         return response.toString();
     }
 
@@ -284,6 +268,8 @@ public class FeederService {
         return response.toString();
     }
 
+//    TODO:Fix error when no name is in the database for the uuid
+
     @RequestMapping(value = "/api/getSchedule", method = RequestMethod.POST)
     public String getSchedule(@RequestBody com.roboter5123.feeder.beans.RequestBody requestBody) throws
             SQLException {
@@ -328,7 +314,7 @@ public class FeederService {
         int scheduleId = args.get("id").getAsInt();
         args.remove("id");
 
-        if (scheduleId <= 0){
+        if (scheduleId <= 0) {
 
             try {
 
@@ -353,7 +339,7 @@ public class FeederService {
 
             }
 
-        }else{
+        } else {
 
             try {
 
@@ -377,11 +363,11 @@ public class FeederService {
 
         try {
 
-            response.add("successfull", new JsonPrimitive(socketController.sendMessage(message, uuid)));
+            response.add("successfully", new JsonPrimitive(socketController.sendMessage(message, uuid)));
 
-        } catch (IOException e) {
+        } catch (IOException | NullPointerException e) {
 
-            response.add("successfull", new JsonPrimitive(false));
+            response.add("successfully", new JsonPrimitive(false));
         }
 
         return response.toString();
