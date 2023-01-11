@@ -305,13 +305,13 @@ public class FeederService {
         if (rs.next()) {
 
             JsonObject schedule = new JsonObject();
-            schedule.add("monday", new JsonPrimitive(rs.getString("monday")));
-            schedule.add("tuesday", new JsonPrimitive(rs.getString("tuesday")));
-            schedule.add("wednesday", new JsonPrimitive(rs.getString("wednesday")));
-            schedule.add("thursday", new JsonPrimitive(rs.getString("thursday")));
-            schedule.add("friday", new JsonPrimitive(rs.getString("friday")));
-            schedule.add("saturday", new JsonPrimitive(rs.getString("saturday")));
-            schedule.add("sunday", new JsonPrimitive(rs.getString("sunday")));
+            schedule.add("0", new JsonPrimitive(rs.getString("monday")));
+            schedule.add("1", new JsonPrimitive(rs.getString("tuesday")));
+            schedule.add("2", new JsonPrimitive(rs.getString("wednesday")));
+            schedule.add("3", new JsonPrimitive(rs.getString("thursday")));
+            schedule.add("4", new JsonPrimitive(rs.getString("friday")));
+            schedule.add("5", new JsonPrimitive(rs.getString("saturday")));
+            schedule.add("6", new JsonPrimitive(rs.getString("sunday")));
             schedule.add("id", new JsonPrimitive(rs.getString("schedule_id")));
             response.add("schedule", schedule);
         }
@@ -388,13 +388,13 @@ public class FeederService {
     }
 
     public void setScheduleInStatement(JsonObject schedule, PreparedStatement myStmt) throws SQLException {
-        myStmt.setString(1, gson.toJson(schedule.get("monday")));
-        myStmt.setString(2, gson.toJson(schedule.get("tuesday")));
-        myStmt.setString(3, gson.toJson(schedule.get("wednesday")));
-        myStmt.setString(4, gson.toJson(schedule.get("thursday")));
-        myStmt.setString(5, gson.toJson(schedule.get("friday")));
-        myStmt.setString(6, gson.toJson(schedule.get("saturday")));
-        myStmt.setString(7, gson.toJson(schedule.get("sunday")));
+        myStmt.setString(1, gson.toJson(schedule.get("0")));
+        myStmt.setString(2, gson.toJson(schedule.get("1")));
+        myStmt.setString(3, gson.toJson(schedule.get("2")));
+        myStmt.setString(4, gson.toJson(schedule.get("3")));
+        myStmt.setString(5, gson.toJson(schedule.get("4")));
+        myStmt.setString(6, gson.toJson(schedule.get("5")));
+        myStmt.setString(7, gson.toJson(schedule.get("6")));
     }
 
     /**

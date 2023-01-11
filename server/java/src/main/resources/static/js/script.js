@@ -122,13 +122,13 @@ $(document).ready(function () {
                     if (result === "{}") {
 
                         schedule = {
-                            "monday": [],
-                            "tuesday": [],
-                            "wednesday": [],
-                            "thursday": [],
-                            "friday": [],
-                            "saturday": [],
-                            "sunday": [],
+                            "0": [],
+                            "1": [],
+                            "2": [],
+                            "3": [],
+                            "4": [],
+                            "5": [],
+                            "6": [],
                             "id": -1
                         }
                         return
@@ -150,8 +150,7 @@ $(document).ready(function () {
 
             let day = $(days[i]).attr("id")
             $(days[i]).find(".dayTasks").empty();
-
-            let currentSchedule = schedule[day]
+            let currentSchedule = schedule[i]
 
             if (currentSchedule.length === 0) {
 
